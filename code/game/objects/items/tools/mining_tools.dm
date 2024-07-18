@@ -292,6 +292,13 @@
 		cut_apart(user, target.name, target, 0, "You melt the snow with [src]. ") //costs nothing
 
 
+/obj/item/tool/pickaxe/plasmacutter/equipped(mob/user, slot)
+	. = ..()
+	toggle_item_bump_attack(user, TRUE)
+
+/obj/item/tool/pickaxe/plasmacutter/dropped(mob/user)
+	. = ..()
+	toggle_item_bump_attack(user, FALSE)
 
 /obj/item/tool/pickaxe/plasmacutter/attack_obj(obj/O, mob/living/user)
 	if(!powered || user.do_actions || CHECK_BITFIELD(O.resistance_flags, INDESTRUCTIBLE) || CHECK_BITFIELD(O.resistance_flags, PLASMACUTTER_IMMUNE))

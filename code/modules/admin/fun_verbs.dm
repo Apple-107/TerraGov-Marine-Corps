@@ -169,7 +169,7 @@
 	if(!check_rights(R_FUN))
 		return
 
-	var/msg = tgui_input_text(usr, "Enter the text you wish to appear to everyone.", "Global Narrate", multiline = TRUE , encode = FALSE)
+	var/msg = tgui_input_text(usr, "Enter the text you wish to appear to everyone.", "Global Narrate", multiline = TRUE , encode = FALSE, max_length = INFINITY)
 
 	if(!msg)
 		return
@@ -480,7 +480,7 @@
 	if(!check_rights(R_FUN))
 		return
 
-	var/message = tgui_input_text(usr, "Global message to send:", "Admin Announce", multiline = TRUE, encode = FALSE)
+	var/message = tgui_input_text(usr, "Global message to send:", "Admin Announce", multiline = TRUE, encode = FALSE, max_length = INFINITY)
 
 	message = noscript(message)
 
@@ -489,7 +489,7 @@
 
 	log_admin("Announce: [key_name(usr)] : [message]")
 	message_admins("[ADMIN_TPMONTY(usr)] Announces:")
-	send_ooc_announcement(message, "From [usr.client.holder.fakekey ? "Administrator" : usr.key]")
+	send_ooc_announcement(message, "From [usr.client.holder.fakekey ? "Administrator" : usr.key]", style = OOC_ALERT_ADMIN)
 
 
 /datum/admins/proc/force_distress()

@@ -40,6 +40,8 @@ GLOBAL_LIST_EMPTY(personal_statistics_list)
 
 	var/mechs_destroyed = 0
 	var/tanks_destroyed = 0
+	var/flags_destroyed = 0
+	var/flags_captured = 0
 	//We are watching
 	var/friendly_fire_damage = 0
 
@@ -54,6 +56,8 @@ GLOBAL_LIST_EMPTY(personal_statistics_list)
 	var/delimbs = 0
 	var/internal_injuries = 0
 	var/internal_injuries_inflicted = 0
+
+	var/grenade_hand_delimbs = 0
 
 	//Medical
 	var/self_heals = 0
@@ -127,6 +131,8 @@ GLOBAL_LIST_EMPTY(personal_statistics_list)
 	var/mission_grenades_primed = 0
 	var/mission_heals = 0
 	var/mission_integrity_repaired = 0
+	var/mission_flags_destroyed = 0
+	var/mission_flags_captured = 0
 
 /datum/personal_statistics/New()
 	. = ..()
@@ -168,6 +174,8 @@ GLOBAL_LIST_EMPTY(personal_statistics_list)
 
 	if(grenades_primed)
 		stats += "[grenades_primed] grenade\s thrown."
+	if(grenade_hand_delimbs)
+		stats += "You blew off [grenade_hand_delimbs] hand[grenade_hand_delimbs != 1 ? "s" : ""] while holding grenades like an idiot."
 	if(traps_created)
 		stats += "[traps_created] trap\s/mine\s/hazard\s placed."
 	if(grenades_primed || traps_created)
@@ -316,6 +324,8 @@ GLOBAL_LIST_EMPTY(personal_statistics_list)
 	mission_objective_decaptured = 0
 	mission_mechs_destroyed = 0
 	mission_tanks_destroyed = 0
+	mission_flags_destroyed = 0
+	mission_flags_captured = 0
 	mission_shrapnel_removed = 0
 	mission_traps_created = 0
 	mission_grenades_primed = 0
@@ -337,6 +347,8 @@ GLOBAL_LIST_EMPTY(personal_statistics_list)
 	credit_bonus += mission_objective_decaptured * 20
 	credit_bonus += mission_mechs_destroyed * 20
 	credit_bonus += mission_tanks_destroyed * 50
+	credit_bonus += mission_flags_destroyed * 250
+	credit_bonus += mission_flags_captured * 500
 	credit_bonus += mission_shrapnel_removed * 3
 	credit_bonus += mission_traps_created * 4
 	credit_bonus += mission_grenades_primed * 2

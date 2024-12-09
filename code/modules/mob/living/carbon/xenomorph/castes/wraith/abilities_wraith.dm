@@ -577,6 +577,9 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 		return
 	user.forceMove(get_turf(linked_portal))
 
+/obj/effect/wraith_portal/lava_act()
+	return
+
 /// Link two portals
 /obj/effect/wraith_portal/proc/link_portal(obj/effect/wraith_portal/portal_to_link)
 	linked_portal = portal_to_link
@@ -596,6 +599,10 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 	SIGNAL_HANDLER
 	if(!linked_portal || !COOLDOWN_CHECK(src, portal_cooldown) || crosser.anchored || (crosser.resistance_flags & PORTAL_IMMUNE))
 		return
+	if(isxeno(crosser))
+		var/mob/living/carbon/xenomorph/xeno_crosser = crosser
+		if(xeno_crosser.m_intent == MOVE_INTENT_WALK)
+			return
 	COOLDOWN_START(linked_portal, portal_cooldown, 1)
 	crosser.pass_flags &= ~PASS_MOB
 	RegisterSignal(crosser, COMSIG_MOVABLE_MOVED, PROC_REF(do_teleport_atom))
@@ -661,7 +668,7 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 	name = "Time Shift"
 	action_icon_state = "rewind"
 	action_icon = 'icons/Xeno/actions/wraith.dmi'
-	desc = "Save the location and status of the target. When the time is up, the target location and status are restored, unless the target is dead or unconscious."
+	desc = "Save the location and status of the target. When the time is up, the target location and status are restored, unless the target is dead, unconscious, or changed z-levels."
 	ability_cost = 100
 	cooldown_duration = 30 SECONDS
 	keybinding_signals = list(
@@ -686,7 +693,12 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 	var/target_initial_on_fire = FALSE
 	/// How far can you rewind someone
 	var/range = 5
+	///Holder for the rewind timer
+	var/rewind_timer
 
+/datum/action/ability/activable/xeno/rewind/Destroy()
+	cancel_timeshift()
+	return ..()
 
 /datum/action/ability/activable/xeno/rewind/can_use_ability(atom/A, silent, override_flags)
 	. = ..()
@@ -720,8 +732,9 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 	if(isxeno(A))
 		var/mob/living/carbon/xenomorph/xeno_target = targeted
 		target_initial_sunder = xeno_target.sunder
-	addtimer(CALLBACK(src, PROC_REF(start_rewinding)), start_rewinding)
+	rewind_timer = addtimer(CALLBACK(src, PROC_REF(start_rewinding)), start_rewinding, TIMER_STOPPABLE)
 	RegisterSignal(targeted, COMSIG_MOVABLE_MOVED, PROC_REF(save_move))
+	RegisterSignal(targeted, COMSIG_MOVABLE_Z_CHANGED, PROC_REF(cancel_timeshift))
 	targeted.add_filter("prerewind_blur", 1, radial_blur_filter(0.04))
 	targeted.balloon_alert(targeted, "You feel anchored to the past!")
 	ADD_TRAIT(targeted, TRAIT_TIME_SHIFTED, XENO_TRAIT)
@@ -738,6 +751,7 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 /datum/action/ability/activable/xeno/rewind/proc/start_rewinding()
 	targeted.remove_filter("prerewind_blur")
 	UnregisterSignal(targeted, COMSIG_MOVABLE_MOVED)
+	UnregisterSignal(targeted, COMSIG_MOVABLE_Z_CHANGED)
 	if(QDELETED(targeted) || targeted.stat != CONSCIOUS)
 		REMOVE_TRAIT(targeted, TRAIT_TIME_SHIFTED, XENO_TRAIT)
 		targeted = null
@@ -770,8 +784,25 @@ GLOBAL_LIST_INIT(wraith_banish_very_short_duration_list, typecacheof(list(
 		targeted.remove_filter("rewind_blur")
 		REMOVE_TRAIT(targeted, TRAIT_TIME_SHIFTED, XENO_TRAIT)
 		targeted = null
+		rewind_timer = null
 		return
 
 	targeted.Move(loc_b, get_dir(loc_b, loc_a))
 	new /obj/effect/temp_visual/after_image(loc_a, targeted)
 	INVOKE_NEXT_TICK(src, PROC_REF(rewind))
+
+// Removes all things associated while someone is being timeshifted, effectively stopping it from happening/continuing.
+/datum/action/ability/activable/xeno/rewind/proc/cancel_timeshift()
+	SIGNAL_HANDLER
+	last_target_locs_list = null
+	REMOVE_TRAIT(owner, TRAIT_IMMOBILE, TIMESHIFT_TRAIT)
+	if(rewind_timer)
+		deltimer(rewind_timer)
+	if(!QDELETED(targeted))
+		targeted.remove_filter("prerewind_blur")
+		targeted.remove_filter("rewind_blur")
+		targeted.status_flags &= ~(INCORPOREAL|GODMODE)
+		UnregisterSignal(targeted, COMSIG_MOVABLE_MOVED)
+		UnregisterSignal(targeted, COMSIG_MOVABLE_Z_CHANGED)
+		REMOVE_TRAIT(targeted, TRAIT_TIME_SHIFTED, XENO_TRAIT)
+		targeted = null

@@ -24,7 +24,7 @@
 		return
 	if(!use(1))
 		return
-	playsound(T, 'sound/weapons/genhit.ogg', 25, 1)
+	playsound(T, 'sound/weapons/genhit.ogg', 25, 1, MEDIUM_SOUND_RANGE)
 	T.PlaceOnTop(turf_type)
 
 /obj/item/stack/tile/plasteel
@@ -71,7 +71,7 @@
 	icon_state = "tile_e"
 	force = 3
 	throwforce = 5
-	attack_verb = list("bashed", "battered", "bludgeoned", "thrashed", "smashed")
+	attack_verb = list("bashes", "batters", "bludgeons", "thrashes", "smashes")
 	turf_type = /turf/open/floor/light
 	var/on = 1
 	var/state = LIGHT_TILE_OK

@@ -39,6 +39,19 @@
 	ENABLE_BITFIELD(atom_flags, INITIALIZED)
 	icon_state = SPACE_ICON_STATE(x, y, z)
 
+	// We make the assumption that the space plane will never be blacklisted, as an optimization
+	if(SSmapping.max_plane_offset)
+		plane = PLANE_SPACE - (PLANE_RANGE * SSmapping.z_level_to_plane_offset[z])
+
+	if (!mapload)
+		if(SSmapping.max_plane_offset)
+			var/turf/T = GET_TURF_ABOVE(src)
+			if(T)
+				T.multiz_turf_new(src, DOWN)
+			T = GET_TURF_BELOW(src)
+			if(T)
+				T.multiz_turf_new(src, UP)
+
 	return INITIALIZE_HINT_NORMAL
 
 /area/space/Entered(atom/movable/arrived, atom/old_loc)
@@ -68,7 +81,7 @@
 			return
 
 		to_chat(user, span_notice("Constructing support lattice ..."))
-		playsound(src, 'sound/weapons/genhit.ogg', 25, 1)
+		playsound(src, 'sound/weapons/genhit.ogg', 25, 1, MEDIUM_SOUND_RANGE)
 		ReplaceWithLattice()
 
 	else if(istype(I, /obj/item/stack/tile/plasteel))
@@ -81,7 +94,7 @@
 		if(S.get_amount() < 1)
 			return
 		qdel(L)
-		playsound(src, 'sound/weapons/genhit.ogg', 25, 1)
+		playsound(src, 'sound/weapons/genhit.ogg', 25, 1, MEDIUM_SOUND_RANGE)
 		S.build(src)
 		S.use(1)
 

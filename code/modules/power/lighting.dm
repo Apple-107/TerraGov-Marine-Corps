@@ -196,14 +196,14 @@
 		electrocute_mob(user, get_area(src), src, 0.3)
 	broken()
 
-/obj/machinery/light/screwdriver_act(mob/living/user, obj/item/I)
+/obj/machinery/light/screwdriver_act(mob/user, obj/item/tool)
 	if(user.a_intent == INTENT_HARM)
 		return FALSE
 	if(status != LIGHT_EMPTY)
 		balloon_alert(user, "Remove bulb first")
 		return TRUE
 
-	playsound(loc, 'sound/items/screwdriver.ogg', 25, 1)
+	tool.play_tool_sound(src)
 	user.visible_message("[user] opens [src]'s casing.", \
 		"You open [src]'s casing.", "You hear a noise.")
 	var/obj/machinery/light_construct/newlight
@@ -376,11 +376,10 @@
 
 ///proc to toggle power on and off for light
 /obj/machinery/light/proc/flicker_power_state(turn_on = TRUE, turn_off = FALSE)
+	playsound(loc, pick(list('sound/effects/lightfizz.ogg', 'sound/effects/lightfizz2.ogg', 'sound/effects/lightfizz3.ogg', 'sound/effects/lightfizz4.ogg', 'sound/effects/lightfizz5.ogg', 'sound/effects/lightfizz.ogg', 'sound/effects/lightfizz6.ogg')), 10, TRUE, SUPER_SHORT_SOUND_RANGE)
 	if(!light_flicker_state)
-		pick(playsound(loc, 'sound/effects/lightfizz.ogg', 10, TRUE), playsound(loc, 'sound/effects/lightfizz2.ogg', 10, TRUE), playsound(loc, 'sound/effects/lightfizz3.ogg', 10, TRUE), playsound(loc, 'sound/effects/lightfizz4.ogg', 10, TRUE), playsound(loc, 'sound/effects/lightfizz5.ogg', 10, TRUE), playsound(loc, 'sound/effects/lightfizz6.ogg', 10, TRUE))
 		update(FALSE)
 	else
-		pick(playsound(loc, 'sound/effects/lightfizz.ogg', 10, TRUE), playsound(loc, 'sound/effects/lightfizz2.ogg', 10, TRUE), playsound(loc, 'sound/effects/lightfizz3.ogg', 10, TRUE), playsound(loc, 'sound/effects/lightfizz4.ogg', 10, TRUE), playsound(loc, 'sound/effects/lightfizz5.ogg', 10, TRUE), playsound(loc, 'sound/effects/lightfizz6.ogg', 10, TRUE))
 		turn_light(null, FALSE)
 
 ///break the light and make sparks if was on
@@ -390,7 +389,7 @@
 
 	if(!skip_sound_and_sparks)
 		if(status == LIGHT_OK || status == LIGHT_BURNED)
-			playsound(src.loc, 'sound/effects/Glasshit.ogg', 25, 1)
+			playsound(src.loc, 'sound/effects/Glasshit.ogg', 25, 1, MEDIUM_SOUND_RANGE)
 		if(status == LIGHT_OK && has_power())
 			var/datum/effect_system/spark_spread/spark_spread = new /datum/effect_system/spark_spread(src)
 			spark_spread.set_up(3, 1, loc)
@@ -412,13 +411,14 @@
 	addtimer(CALLBACK(src, PROC_REF(delayed_explosion)), 0.5 SECONDS)
 
 /obj/machinery/light/proc/delayed_explosion()
-	explosion(loc, 0, 1, 3, 0, 2)
+	explosion(loc, 0, 1, 3, 0, 2, explosion_cause=src)
 	qdel(src)
 
 //types
 /obj/machinery/light/mainship/Initialize(mapload)
 	. = ..()
 	GLOB.mainship_lights += src
+	RegisterSignal(SSsecurity_level, COMSIG_SECURITY_LEVEL_CHANGED, PROC_REF(on_alert_change))
 
 /obj/machinery/light/mainship/Destroy()
 	. = ..()
@@ -431,6 +431,34 @@
 	brightness = 4
 	desc = "A small lighting fixture."
 	light_type = /obj/item/light_bulb/bulb
+
+/// Changes the light's appearance based on the security level when [COMSIG_SECURITY_LEVEL_CHANGED] sends a signal
+/obj/machinery/light/mainship/proc/on_alert_change(datum/source, datum/security_level/new_level, datum/security_level/previous_level)
+	SIGNAL_HANDLER
+	var/most_recent_level_red_lights = ((previous_level.sec_level_flags & SEC_LEVEL_FLAG_RED_LIGHTS))
+	if(!(new_level.sec_level_flags & SEC_LEVEL_FLAG_RED_LIGHTS) && most_recent_level_red_lights)
+		var/area/active_area = get_area(src)
+		if(!active_area.power_light || status != LIGHT_OK) //do not adjust unpowered or broken bulbs
+			return
+		base_icon_state = initial(base_icon_state)
+		light_color = bulb_colour
+		light_range = brightness
+		update_light()
+		update_appearance(UPDATE_ICON)
+	else if((new_level.sec_level_flags & SEC_LEVEL_FLAG_RED_LIGHTS) && !most_recent_level_red_lights)
+		var/area/active_area = get_area(src)
+		if(!active_area.power_light || status != LIGHT_OK) //do not adjust unpowered or broken bulbs
+			return
+		base_icon_state = "[initial(base_icon_state)]_red"
+		light_color = COLOR_SOMEWHAT_LIGHTER_RED
+		light_range = 7.5
+		if(prob(75)) //randomize light range on most lights, patchy lighting gives a sense of danger
+			var/rangelevel = pick(5.5,6.0,6.5,7.0)
+			if(prob(15))
+				rangelevel -= pick(0.5,1.0,1.5,2.0)
+			light_range = rangelevel
+		update_light()
+		update_appearance(UPDATE_ICON)
 
 /obj/machinery/light/red
 	base_icon_state = "tube_red"
@@ -499,7 +527,8 @@
 	desc = "A tube light fixture set into the floor. Rated for foot traffic."
 	icon_state = "floortube_empty"
 	base_icon_state = "floortube"
-	layer = HOLOPAD_LAYER
+	layer = MAP_SWITCH(ABOVE_OPEN_TURF_LAYER, LOW_OBJ_LAYER)
+	plane = FLOOR_PLANE
 	fitting = "large tube"
 	light_type = /obj/item/light_bulb/tube/large
 	brightness = 12
@@ -513,6 +542,7 @@
 	anchored = TRUE
 	density = FALSE
 	layer = BELOW_TABLE_LAYER
+	plane = FLOOR_PLANE
 	use_power = ACTIVE_POWER_USE
 	idle_power_usage = 2
 	active_power_usage = 20
@@ -570,9 +600,12 @@
 	light_power = 0
 	light_range = 0
 
+
+
 /obj/machinery/floor_warn_light/self_destruct/Initialize(mapload)
 	. = ..()
 	SSevacuation.alarm_lights += src
+
 
 /obj/machinery/floor_warn_light/self_destruct/Destroy()
 	. = ..()

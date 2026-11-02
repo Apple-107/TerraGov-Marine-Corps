@@ -1,7 +1,6 @@
 SUBSYSTEM_DEF(statpanels)
 	name = "Stat Panels"
 	wait = 4
-	init_order = INIT_ORDER_STATPANELS
 	init_stage = INITSTAGE_EARLY
 	priority = FIRE_PRIORITY_STATPANEL
 	runlevels = RUNLEVELS_DEFAULT | RUNLEVEL_LOBBY
@@ -56,7 +55,7 @@ SUBSYSTEM_DEF(statpanels)
 
 			if(check_rights_for(target, R_DEBUG))
 				if(!("MC" in target.panel_tabs))
-					target.stat_panel.send_message("add_mc_tab")
+					target.stat_panel.send_message("add_mc_tab", target.holder.href_token)
 				if(target.stat_tab == "MC" && ((num_fires % mc_wait == 0) || target.prefs.fast_mc_refresh))
 					set_MC_tab(target)
 
@@ -84,7 +83,6 @@ SUBSYSTEM_DEF(statpanels)
 /datum/controller/subsystem/statpanels/proc/set_status_tab(client/target)
 	if(!global_data)//statbrowser hasnt fired yet and we were called from immediate_send_stat_data()
 		return
-
 	target.stat_panel.send_message("update_stat", list(
 		"global_data" = global_data,
 		"ping_str" = "Ping: [round(target.lastping, 1)]ms (Average: [round(target.avgping, 1)]ms)",
@@ -193,6 +191,24 @@ SUBSYSTEM_DEF(statpanels)
 		list("Failsafe Controller:", Failsafe.stat_entry(), ref(Failsafe)),
 		list("","")
 	)
+#if defined(MC_TAB_TRACY_INFO) || defined(SPACEMAN_DMM)
+	var/static/tracy_dll
+	var/static/tracy_present
+	if(isnull(tracy_dll))
+		tracy_dll = TRACY_DLL_PATH
+		tracy_present = fexists(tracy_dll)
+	if(tracy_present)
+		if(Tracy.enabled)
+			mc_data.Insert(2, list(list("byond-tracy:", "Active (reason: [Tracy.init_reason || "N/A"])")))
+		else if(Tracy.error)
+			mc_data.Insert(2, list(list("byond-tracy:", "Errored ([Tracy.error])")))
+		else if(fexists(TRACY_ENABLE_PATH))
+			mc_data.Insert(2, list(list("byond-tracy:", "Queued for next round")))
+		else
+			mc_data.Insert(2, list(list("byond-tracy:", "Inactive")))
+	else
+		mc_data.Insert(2, list(list("byond-tracy:", "[tracy_dll] not present")))
+#endif
 	for(var/datum/controller/subsystem/sub_system as anything in Master.subsystems)
 		mc_data[++mc_data.len] = list("\[[sub_system.state_letter()]][sub_system.name]", sub_system.stat_entry(), ref(sub_system))
 	mc_data[++mc_data.len] = list("Camera Net", "Cameras: [GLOB.cameranet.cameras.len] | Chunks: [GLOB.cameranet.chunks.len]", ref(GLOB.cameranet))

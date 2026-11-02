@@ -88,8 +88,6 @@
 	var/show_storage_fullness = TRUE
 	///Set this to make it possible to use this item in an inverse way, so you can have the item in your hand and click items on the floor to pick them up.
 	var/use_to_pickup = FALSE
-	///Set this to make the storage item group contents of the same type and display them as a number.
-	var/display_contents_with_number
 	///Set this variable to allow the object to have the 'empty' verb, which dumps all the contents on the floor.
 	var/allow_quick_empty
 	///Set this variable to allow the object to have the 'toggle mode' verb, which quickly collects all items from a tile.
@@ -146,43 +144,39 @@
 	boxes.master = src
 	boxes.icon_state = "block"
 	boxes.screen_loc = "7,7 to 10,8"
-	boxes.layer = HUD_LAYER
-	boxes.plane = HUD_PLANE
+	SET_PLANE_EXPLICIT(boxes, HUD_PLANE, parent)
 
 	storage_start = new /atom/movable/screen/storage()
 	storage_start.name = "storage"
 	storage_start.master = src
 	storage_start.icon_state = "storage_start"
 	storage_start.screen_loc = "7,7 to 10,8"
-	storage_start.layer = HUD_LAYER
-	storage_start.plane = HUD_PLANE
+	SET_PLANE_EXPLICIT(storage_start, HUD_PLANE, parent)
 	storage_continue = new /atom/movable/screen/storage()
 	storage_continue.name = "storage"
 	storage_continue.master = src
 	storage_continue.icon_state = "storage_continue"
 	storage_continue.screen_loc = "7,7 to 10,8"
-	storage_continue.layer = HUD_LAYER
-	storage_continue.plane = HUD_PLANE
+	SET_PLANE_EXPLICIT(storage_continue, HUD_PLANE, parent)
+
 	storage_end = new /atom/movable/screen/storage()
 	storage_end.name = "storage"
 	storage_end.master = src
 	storage_end.icon_state = "storage_end"
 	storage_end.screen_loc = "7,7 to 10,8"
-	storage_end.layer = HUD_LAYER
-	storage_end.plane = HUD_PLANE
+	SET_PLANE_EXPLICIT(storage_end, HUD_PLANE, parent)
 
 	stored_start = new /obj() //we just need these to hold the icon
 	stored_start.icon_state = "stored_start"
-	stored_start.layer = HUD_LAYER
-	stored_start.plane = HUD_PLANE
+	SET_PLANE_EXPLICIT(stored_start, HUD_PLANE, parent)
+
 	stored_continue = new /obj()
 	stored_continue.icon_state = "stored_continue"
-	stored_continue.layer = HUD_LAYER
-	stored_continue.plane = HUD_PLANE
+	SET_PLANE_EXPLICIT(stored_continue, HUD_PLANE, parent)
+
 	stored_end = new /obj()
 	stored_end.icon_state = "stored_end"
-	stored_end.layer = HUD_LAYER
-	stored_end.plane = HUD_PLANE
+	SET_PLANE_EXPLICIT(stored_end, HUD_PLANE, parent)
 
 	closer = new()
 	closer.master = src
@@ -247,6 +241,7 @@
 	RegisterSignal(parent, ATOM_RECALCULATE_STORAGE_SPACE, PROC_REF(recalculate_storage_space))
 	RegisterSignals(parent, list(COMSIG_ITEM_EQUIPPED, COMSIG_ITEM_DROPPED), PROC_REF(update_verbs))
 	RegisterSignal(parent, COMSIG_ITEM_QUICK_EQUIP, PROC_REF(on_quick_equip_request))
+	RegisterSignal(parent, COMSIG_ATOM_INITIALIZED_ON, PROC_REF(item_init_in_parent))
 
 ///Unregisters our signals from parent. Used when parent loses storage but is not destroyed
 /datum/storage/proc/unregister_storage_signals(atom/parent)
@@ -270,6 +265,7 @@
 		COMSIG_ITEM_EQUIPPED,
 		COMSIG_ITEM_DROPPED,
 		COMSIG_ITEM_QUICK_EQUIP,
+		COMSIG_ATOM_INITIALIZED_ON,
 	))
 
 /// Almost 100% of the time the lists passed into set_holdable are reused for each instance
@@ -320,7 +316,7 @@ GLOBAL_LIST_EMPTY(cached_storage_typecaches)
 				return
 	if(!can_be_inserted(attacking_item, user))
 		if(user.s_active != src) //this would close the open storage otherwise
-			open(user)
+			INVOKE_ASYNC(src, PROC_REF(open), user)
 		return FALSE
 	INVOKE_ASYNC(src, PROC_REF(handle_item_insertion), attacking_item, FALSE, user)
 	return COMPONENT_NO_AFTERATTACK
@@ -340,7 +336,8 @@ GLOBAL_LIST_EMPTY(cached_storage_typecaches)
 			item_to_attack = parent.contents[length(parent.contents)]
 			INVOKE_ASYNC(item_to_attack, TYPE_PROC_REF(/atom/movable, attack_hand), user)
 			return COMPONENT_NO_ATTACK_HAND
-		else if(open(user))
+		else if(can_open(user))
+			INVOKE_ASYNC(src, PROC_REF(open), user)
 			return COMPONENT_NO_ATTACK_HAND
 	for(var/mob/M AS in content_watchers)
 		close(M)
@@ -373,8 +370,11 @@ GLOBAL_LIST_EMPTY(cached_storage_typecaches)
 
 /datum/storage/proc/on_alt_right_click(datum/source, mob/user)
 	SIGNAL_HANDLER
-	if(parent.Adjacent(user))
-		open(user)
+	//todo: Else where in this datum it just checks ishuman, but it should really just check for dextrous
+	if(isliving(user) && !user.dextrous) //bad xeno.
+		return
+	if(parent.Adjacent(user) && can_open(user))
+		INVOKE_ASYNC(src, PROC_REF(open), user)
 
 /**
  * Called when you ctrl + left click on parent
@@ -387,7 +387,9 @@ GLOBAL_LIST_EMPTY(cached_storage_typecaches)
 
 /datum/storage/proc/on_attack_ghost(datum/source, mob/user)
 	SIGNAL_HANDLER
-	open(user)
+	if(!can_open(user))
+		return
+	INVOKE_ASYNC(src, PROC_REF(open), user)
 
 ///Signal handler for when you click drag parent to something (usually ourselves or an inventory slot)
 /datum/storage/proc/on_mousedrop_onto(datum/source, obj/over_object as obj, mob/user)
@@ -398,8 +400,8 @@ GLOBAL_LIST_EMPTY(cached_storage_typecaches)
 	if(user.lying_angle)
 		return COMPONENT_NO_MOUSEDROP
 
-	if(over_object == user && parent.Adjacent(user)) // this must come before the screen objects only block
-		open(user)
+	if(over_object == user && parent.Adjacent(user) && can_open(user)) // this must come before the screen objects only block
+		INVOKE_ASYNC(src, PROC_REF(open), user)
 		return COMPONENT_NO_MOUSEDROP
 
 	if(!istype(over_object, /atom/movable/screen))
@@ -415,7 +417,7 @@ GLOBAL_LIST_EMPTY(cached_storage_typecaches)
 	if(user.restrained() || user.stat)
 		return COMPONENT_NO_MOUSEDROP
 
-	put_storage_in_hand(source, over_object, user)
+	INVOKE_ASYNC(src, PROC_REF(put_storage_in_hand), source, over_object, user)
 	return COMPONENT_NO_MOUSEDROP
 
 ///Wrapper that puts the storage into our chosen hand
@@ -446,7 +448,7 @@ GLOBAL_LIST_EMPTY(cached_storage_typecaches)
 
 /datum/storage/verb/toggle_gathering_mode()
 	set name = "Switch Gathering Method"
-	set category = "Object"
+	set category = "IC.Object"
 
 	collection_mode = !collection_mode
 	if(collection_mode)
@@ -456,7 +458,7 @@ GLOBAL_LIST_EMPTY(cached_storage_typecaches)
 
 /datum/storage/verb/toggle_draw_mode()
 	set name = "Switch Storage Drawing Method"
-	set category = "Object"
+	set category = "IC.Object"
 
 	draw_mode = !draw_mode
 	if(draw_mode)
@@ -505,14 +507,13 @@ GLOBAL_LIST_EMPTY(cached_storage_typecaches)
 
 ///Hides our inventory from user, sets s_active to null and removes user from content_watchers
 /datum/storage/proc/hide_from(mob/user)
-	if(!user.client)
-		return
-	user.client.screen -= src.boxes
-	user.client.screen -= storage_start
-	user.client.screen -= storage_continue
-	user.client.screen -= storage_end
-	user.client.screen -= src.closer
-	user.client.screen -= parent.contents
+	if(user.client)
+		user.client.screen -= src.boxes
+		user.client.screen -= storage_start
+		user.client.screen -= storage_continue
+		user.client.screen -= storage_end
+		user.client.screen -= src.closer
+		user.client.screen -= parent.contents
 	if(user.s_active == src)
 		user.s_active = null
 	content_watchers -= user
@@ -520,19 +521,19 @@ GLOBAL_LIST_EMPTY(cached_storage_typecaches)
 ///Returns a list of lookers, basically any mob that can see our contents
 /datum/storage/proc/can_see_content()
 	var/list/lookers = list()
-	for(var/i in content_watchers)
-		var/mob/content_watcher_mob = i
-		if(content_watcher_mob.s_active == src && content_watcher_mob.client)
-			lookers |= content_watcher_mob
-		else
+	for(var/mob/content_watcher_mob AS in content_watchers)
+		if(!ismob(content_watcher_mob) || !content_watcher_mob.client || content_watcher_mob.s_active != src)
 			content_watchers -= content_watcher_mob
+			continue
+		lookers |= content_watcher_mob
 	return lookers
+
+///Any special behavior checks to see if we can open
+/datum/storage/proc/can_open(mob/user)
+	return TRUE
 
 ///Opens our storage, closes the storage if we are s_active
 /datum/storage/proc/open(mob/user)
-	if(!opened)
-		orient2hud()
-		opened = TRUE
 	if(use_sound && user.stat != DEAD)
 		playsound(parent.loc, use_sound, 25, 1, 3)
 
@@ -541,8 +542,18 @@ GLOBAL_LIST_EMPTY(cached_storage_typecaches)
 		return TRUE
 	if(user.s_active) //We can only have 1 active storage at once
 		user.s_active.close(user)
+	orient2hud()
+	opened = TRUE
 	show_to(user)
 	return TRUE
+
+/datum/storage/proc/refresh_views()
+	var/list/lookers = can_see_content()
+	if(!length(lookers))
+		return
+	orient2hud()
+	for(var/mob/looker AS in lookers)
+		show_to(looker)
 
 ///Closes our storage
 /datum/storage/proc/close(mob/user)
@@ -560,8 +571,7 @@ GLOBAL_LIST_EMPTY(cached_storage_typecaches)
 	boxes.screen_loc = "[tx]:,[ty] to [mx],[my]"
 	for(var/obj/object in parent.contents)
 		object.screen_loc = "[cx],[cy]"
-		object.layer = ABOVE_HUD_LAYER
-		object.plane = ABOVE_HUD_PLANE
+		SET_PLANE_IMPLICIT(object, ABOVE_HUD_PLANE)
 		cx++
 		if(cx > mx)
 			cx = tx
@@ -571,39 +581,26 @@ GLOBAL_LIST_EMPTY(cached_storage_typecaches)
 		boxes.update_fullness(parent)
 
 ///This proc draws out the inventory and places the items on it. It uses the standard position.
-/datum/storage/proc/slot_orient_objs(rows, cols, list/obj/item/display_contents)
+/datum/storage/proc/slot_orient_objs(rows, cols)
 	var/cx = 4
 	var/cy = 2+rows
 	boxes.screen_loc = "4:16,2:16 to [4+cols]:16,[2+rows]:16"
 
-	if(display_contents_with_number)
-		for(var/datum/numbered_display/ND in display_contents)
-			ND.sample_object.mouse_opacity = 2
-			ND.sample_object.screen_loc = "[cx]:16,[cy]:16"
-			ND.sample_object.maptext = "<font color='white'>[(ND.number > 1)? "[ND.number]" : ""]</font>"
-			ND.sample_object.layer = ABOVE_HUD_LAYER
-			ND.sample_object.plane = ABOVE_HUD_PLANE
-			cx++
-			if(cx > (4+cols))
-				cx = 4
-				cy--
-	else
-		for(var/obj/object in parent.contents)
-			object.mouse_opacity = 2 //So storage items that start with contents get the opacity trick.
-			object.screen_loc = "[cx]:16,[cy]:16"
-			object.maptext = ""
-			object.layer = ABOVE_HUD_LAYER
-			object.plane = ABOVE_HUD_PLANE
-			cx++
-			if(cx > (4+cols))
-				cx = 4
-				cy--
+	for(var/obj/object in parent.contents)
+		object.mouse_opacity = 2 //So storage items that start with contents get the opacity trick.
+		object.screen_loc = "[cx]:16,[cy]:16"
+		object.maptext = ""
+		SET_PLANE_IMPLICIT(object, ABOVE_HUD_PLANE)
+		cx++
+		if(cx > (4+cols))
+			cx = 4
+			cy--
 	closer.screen_loc = "[4+cols+1]:16,2:16"
 	if(show_storage_fullness)
 		boxes.update_fullness(parent)
 
 ///Generates a UI for slotless storage based on the objects inside of it
-/datum/storage/proc/space_orient_objs(list/obj/item/display_contents)
+/datum/storage/proc/space_orient_objs()
 	// should be equal to default backpack capacity
 	var/baseline_max_storage_space = 21
 	// length of sprite for start and end of the box representing total storage space
@@ -628,6 +625,9 @@ GLOBAL_LIST_EMPTY(cached_storage_typecaches)
 	var/startpoint = 0
 	var/endpoint = 1
 
+	// TODO: this is very inefficient. we should instead be adding 3 overlays offset with pixel_x to
+	// the item and remove the click border code.
+	// the matrix spam is prolly why this is one of our highest overtiming procs...
 	for(var/obj/item/object in parent.contents)
 		startpoint = endpoint + 1
 		endpoint += storage_width * object.w_class / max_storage_space
@@ -650,56 +650,23 @@ GLOBAL_LIST_EMPTY(cached_storage_typecaches)
 		storage_start.overlays += src.stored_end
 
 		object.screen_loc = "4:[round((startpoint+endpoint)/2)+2],2:16"
-		object.maptext = ""
-		object.layer = ABOVE_HUD_LAYER
-		object.plane = ABOVE_HUD_PLANE
+		SET_PLANE_IMPLICIT(object, ABOVE_HUD_PLANE)
 
 	closer.screen_loc = "4:[storage_width+19],2:16"
-
-/datum/numbered_display
-	///Object to compare to the item inside of a slotless storage
-	var/obj/item/sample_object
-	///Used to display a number on the object inside of a storage
-	var/number
-
-/datum/numbered_display/New(obj/item/sample)
-	if(!istype(sample))
-		qdel(src)
-	sample_object = sample
-	number = 1
-
-/datum/numbered_display/Destroy()
-	sample_object = null
-	return ..()
 
 ///This proc determines the size of the inventory to be displayed. Please touch it only if you know what you're doing.
 /datum/storage/proc/orient2hud()
 	var/adjusted_contents = length(parent.contents)
-	var/list/datum/numbered_display/numbered_contents //Numbered contents display
-
-	if(display_contents_with_number)
-		numbered_contents = list()
-		adjusted_contents = 0
-		for(var/obj/item/item in parent.contents)
-			var/found = FALSE
-			for(var/datum/numbered_display/numbered_display_checked in numbered_contents)
-				if(numbered_display_checked.sample_object.type == item.type)
-					numbered_display_checked.number++
-					found = TRUE
-					break
-			if(!found)
-				adjusted_contents++
-				numbered_contents.Add( new/datum/numbered_display(item) )
 
 	if(storage_slots == null)
-		space_orient_objs(numbered_contents)
+		space_orient_objs()
 		return
 
 	var/row_num = 0
 	var/col_count = min(7,storage_slots) -1
 	if(adjusted_contents > 7)
 		row_num = round((adjusted_contents-1) / 7) // 7 is the maximum allowed width.
-	slot_orient_objs(row_num, col_count, numbered_contents)
+	slot_orient_objs(row_num, col_count)
 
 ///This proc return 1 if the item can be picked up and 0 if it can't. Set the warning to stop it from printing messages
 /datum/storage/proc/can_be_inserted(obj/item/item_to_insert, mob/user, warning = TRUE)
@@ -710,17 +677,17 @@ GLOBAL_LIST_EMPTY(cached_storage_typecaches)
 		return FALSE //Means the item is already in the storage item
 	if(storage_slots != null && length(parent.contents) >= storage_slots)
 		if(warning)
-			to_chat(user, span_notice("[parent.name] is full, make some space."))
+			to_chat(user, span_notice("\The [parent.name] is full, make some space."))
 		return FALSE //Storage item is full
 
 	if(length(can_hold) && !is_type_in_typecache(item_to_insert, typecacheof(can_hold)))
 		if(warning)
-			to_chat(user, span_notice("[parent.name] cannot hold [item_to_insert]."))
+			to_chat(user, span_notice("\The [parent.name] cannot hold [item_to_insert]."))
 		return FALSE
 
 	if(is_type_in_typecache(item_to_insert, typecacheof(cant_hold))) //Check for specific items which this container can't hold.
 		if(warning)
-			to_chat(user, span_notice("[parent.name] cannot hold [item_to_insert]."))
+			to_chat(user, span_notice("\The [parent.name] cannot hold [item_to_insert]."))
 		return FALSE
 
 	if(!is_type_in_typecache(item_to_insert, typecacheof(storage_type_limits)) && item_to_insert.w_class > max_w_class)
@@ -734,7 +701,7 @@ GLOBAL_LIST_EMPTY(cached_storage_typecaches)
 
 	if(sum_storage_cost > max_storage_space)
 		if(warning)
-			to_chat(user, span_notice("[parent.name] is full, make some space."))
+			to_chat(user, span_notice("\The [parent.name] is full, make some space."))
 		return FALSE
 
 	if(isitem(parent))
@@ -742,7 +709,7 @@ GLOBAL_LIST_EMPTY(cached_storage_typecaches)
 		if(item_to_insert.w_class >= parent_storage.w_class && istype(item_to_insert, /obj/item/storage) && !is_type_in_typecache(item_to_insert.type, typecacheof(storage_type_limits)))
 			if(!istype(src, /obj/item/storage/backpack/holding)) //bohs should be able to hold backpacks again. The override for putting a boh in a boh is in backpack.dm.
 				if(warning)
-					to_chat(user, span_notice("[parent.name] cannot hold [item_to_insert] as it's a storage item of the same size."))
+					to_chat(user, span_notice("\The [parent.name] cannot hold \the [item_to_insert] as it's a storage item of the same size."))
 				return FALSE //To prevent the stacking of same sized storage items.
 
 	for(var/limited_type in storage_type_limits_max)
@@ -750,7 +717,7 @@ GLOBAL_LIST_EMPTY(cached_storage_typecaches)
 			continue
 		if(storage_type_limits_max[limited_type] == 0)
 			if(warning)
-				to_chat(user, span_warning("[parent.name] can't fit any more of those.") )
+				to_chat(user, span_warning("\The [parent.name] can't fit any more of those.") )
 			return FALSE
 
 	if(istype(item_to_insert, /obj/item/tool/hand_labeler))
@@ -776,7 +743,7 @@ GLOBAL_LIST_EMPTY(cached_storage_typecaches)
 	if(!alert_user)
 		return do_after(user, access_delay, IGNORE_USER_LOC_CHANGE, parent)
 
-	to_chat(user, "<span class='notice'>You begin to [taking_out ? "take" : "put"] [accessed] [taking_out ? "out of" : "into"] [parent.name]")
+	to_chat(user, "<span class='notice'>You begin to [taking_out ? "take" : "put"] [accessed] [taking_out ? "out of" : "into"] \the [parent.name]")
 	if(!do_after(user, access_delay, IGNORE_USER_LOC_CHANGE, parent))
 		to_chat(user, span_warning("You fumble [accessed]!"))
 		return FALSE
@@ -789,6 +756,11 @@ GLOBAL_LIST_EMPTY(cached_storage_typecaches)
 /datum/storage/proc/should_access_delay(obj/item/accessed, mob/user, taking_out)
 	return FALSE
 
+///Stores an item properly if its spawned directly into parent
+/datum/storage/proc/item_init_in_parent(datum/source, obj/item/new_item)
+	SIGNAL_HANDLER
+	INVOKE_ASYNC(src, PROC_REF(handle_item_insertion), new_item)
+
 /**
  * This proc handles items being inserted. It does not perform any checks of whether an item can or can't be inserted.
  * That's done by can_be_inserted()
@@ -796,7 +768,7 @@ GLOBAL_LIST_EMPTY(cached_storage_typecaches)
  * such as when picking up all the items on a tile with one click.
  * user can be null, it refers to the potential mob doing the insertion.
  */
-/datum/storage/proc/handle_item_insertion(obj/item/item, prevent_warning = FALSE, mob/user)
+/datum/storage/proc/handle_item_insertion(obj/item/item, prevent_warning = FALSE, mob/user) //todo: this isnt called when spawning some populated items. lacking INVOKE_ASYNC(storage_datum, TYPE_PROC_REF(/datum/storage, handle_item_insertion), new_item)
 	if(!istype(item))
 		return FALSE
 	if(!handle_access_delay(item, user, taking_out = FALSE))
@@ -807,6 +779,8 @@ GLOBAL_LIST_EMPTY(cached_storage_typecaches)
 			return FALSE
 	else
 		item.forceMove(parent)
+	SEND_SIGNAL(parent, COMSIG_ITEM_STORED, item)
+	RegisterSignal(item, COMSIG_MOVABLE_MOVED, PROC_REF(item_removed_from_storage))
 	item.on_enter_storage(parent)
 	if(length(holsterable_allowed))
 		for(var/holsterable_item in holsterable_allowed) //If our item is our snowflake item, it gets set as holstered_item
@@ -818,9 +792,7 @@ GLOBAL_LIST_EMPTY(cached_storage_typecaches)
 			user.client?.screen -= item
 		if(!prevent_warning)
 			insertion_message(item, user)
-	orient2hud()
-	for(var/mob/M in can_see_content())
-		show_to(M)
+	refresh_views()
 	if(storage_slots)
 		item.mouse_opacity = 2 //not having to click the item's tiny sprite to take it out of the storage.
 	parent.update_icon()
@@ -846,39 +818,39 @@ GLOBAL_LIST_EMPTY(cached_storage_typecaches)
  * * silent: defaults to FALSE, on subtypes this is used to prevent a sound from being played
  * * bypass_delay: if TRUE, will bypass draw delay
  */
-/datum/storage/proc/remove_from_storage(obj/item/item, atom/new_location, mob/user, silent = FALSE, bypass_delay = FALSE)
+/datum/storage/proc/remove_from_storage(obj/item/item, atom/new_location, mob/user, silent = FALSE, bypass_delay = FALSE, move_item = TRUE)
 	if(!istype(item))
 		return FALSE
 
 	if(!bypass_delay && !handle_access_delay(item, user))
 		return FALSE
 
+	if(item == holstered_item)
+		holstered_item = null
+
 	for(var/mob/M AS in can_see_content())
 		if(!M.client)
 			continue
 		M.client.screen -= item
 
+	if(!QDELETED(item))
+		UnregisterSignal(item, COMSIG_MOVABLE_MOVED)
+		item.on_exit_storage(src)
+		item.mouse_opacity = initial(item.mouse_opacity)
+
 	if(new_location)
 		if(ismob(new_location))
-			item.layer = ABOVE_HUD_LAYER
-			item.plane = ABOVE_HUD_PLANE
+			SET_PLANE_EXPLICIT(item, ABOVE_HUD_PLANE, user)
 			item.pickup(new_location)
 		else
 			item.layer = initial(item.layer)
-			item.plane = initial(item.plane)
-		item.forceMove(new_location)
-	else
+			SET_PLANE_IMPLICIT(item, initial(item.plane))
+		if(move_item)
+			item.forceMove(new_location)
+	else if(move_item)
 		item.moveToNullspace()
 
-	orient2hud()
-
-	for(var/i in can_see_content())
-		var/mob/M = i
-		show_to(M)
-
-	if(!QDELETED(item))
-		item.on_exit_storage(src)
-		item.mouse_opacity = initial(item.mouse_opacity)
+	refresh_views()
 
 	for(var/limited_type in storage_type_limits_max)
 		if(istype(item, limited_type))
@@ -891,14 +863,14 @@ GLOBAL_LIST_EMPTY(cached_storage_typecaches)
 ///Refills the storage from the refill_types item
 /datum/storage/proc/do_refill(obj/item/storage/refiller, mob/user)
 	if(!length(refiller.contents))
-		user.balloon_alert(user, "[refiller] is empty.")
+		user.balloon_alert(user, "refilling container is empty!")
 		return
 
 	if(!can_be_inserted(refiller.contents[1], user))
-		user.balloon_alert(user, "[parent.name] is full.")
+		user.balloon_alert(user, "receiving container is full!")
 		return
 
-	user.balloon_alert(user, "Refilling.")
+	user.balloon_alert(user, "refilling...")
 
 	if(!do_after(user, 1.5 SECONDS, NONE, user, BUSY_ICON_GENERIC))
 		return
@@ -1005,17 +977,23 @@ GLOBAL_LIST_EMPTY(cached_storage_typecaches)
 	if(isitem(movable_atom))
 		INVOKE_ASYNC(src, PROC_REF(remove_from_storage), movable_atom, null, usr, silent = TRUE, bypass_delay = TRUE)
 
-///signal sent from /atom/proc/max_stack_merging()
-/datum/storage/proc/max_stack_merging(datum/source, obj/item/stack/stacks)
+///Handles if the item is forcemoved out of storage
+/datum/storage/proc/item_removed_from_storage(obj/item/item)
+	SIGNAL_HANDLER
+	INVOKE_ASYNC(src, PROC_REF(remove_from_storage), item, item.loc, null, FALSE, TRUE, FALSE)
+
+///Returns the max amount that be put into a stack in src without exceeding the weight limit
+/datum/storage/proc/max_stack_merging(datum/source, obj/item/stack/stacks, list/max_list)
+	SIGNAL_HANDLER
 	if(is_type_in_typecache(stacks, typecacheof(storage_type_limits)))
 		return FALSE //No need for limits if we can bypass it.
 	var/weight_diff = initial(stacks.w_class) - max_w_class
 	if(weight_diff <= 0)
 		return FALSE //Nor if the limit is not higher than what we have.
-	var/max_amt = round((stacks.max_amount / STACK_WEIGHT_STEPS) * (STACK_WEIGHT_STEPS - weight_diff)) //How much we can fill per weight step times the valid steps.
+	var/max_amt = floor((stacks.max_amount / STACK_WEIGHT_STEPS) * (STACK_WEIGHT_STEPS - weight_diff)) //How much we can fill per weight step times the valid steps.
 	if(max_amt <= 0 || max_amt > stacks.max_amount)
 		stack_trace("[parent.name] tried to max_stack_merging([stacks]) with [max_w_class] max_w_class and [weight_diff] weight_diff, resulting in [max_amt] max_amt.")
-	return max_amt
+	max_list += max_amt
 
 ///Called from signal in order to update the color of our storage, it's "fullness" basically
 /datum/storage/proc/recalculate_storage_space(datum/source)
@@ -1062,7 +1040,7 @@ GLOBAL_LIST_EMPTY(cached_storage_typecaches)
 	if(!ishuman(user) || user.incapacitated())
 		return
 	if(!length(parent.contents))
-		return user.balloon_alert(user, "Empty")
+		return user.balloon_alert(user, "empty!")
 	if(user.get_active_held_item())
 		return //User is already holding something.
 	if(holsterable_allowed && holstered_item) //If we have a holstered item in parent contents

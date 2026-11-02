@@ -88,7 +88,7 @@
 	to_chat(src, span_danger("*BZZZT*"))
 	to_chat(src, span_warning("Warning: Electromagnetic pulse detected."))
 
-/mob/living/silicon/apply_effect(effect = 0, effecttype = STUN, updating_health = FALSE)
+/mob/living/silicon/apply_effect(effect = 0, effect_type = EFFECT_STUN, updating_health = FALSE)
 	return FALSE
 
 
@@ -205,6 +205,6 @@
 
 		else
 			user.do_attack_animation(src, ATTACK_EFFECT_KICK)
-			playsound(loc, 'sound/effects/bang.ogg', 10, 1)
+			playsound(loc, 'sound/effects/bang.ogg', 10, 1, SUPER_SHORT_SOUND_RANGE)
 			visible_message(span_danger("[user] punches [src], but doesn't leave a dent."), \
 				span_warning("[user] punches [src], but doesn't leave a dent."))

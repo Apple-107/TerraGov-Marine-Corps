@@ -3,7 +3,6 @@ GLOBAL_LIST_EMPTY(explosions)
 
 SUBSYSTEM_DEF(explosions)
 	name = "Explosions"
-	init_order = INIT_ORDER_EXPLOSIONS
 	priority = FIRE_PRIORITY_EXPLOSIONS
 	wait = 1
 	flags = SS_TICKER|SS_NO_INIT
@@ -93,10 +92,57 @@ SUBSYSTEM_DEF(explosions)
 // 5 explosion power is a (0, 1, 3) explosion.
 // 1 explosion power is a (0, 0, 1) explosion.
 
-/proc/explosion(atom/epicenter, devastation_range, heavy_impact_range, light_impact_range, weak_impact_range, flash_range, flame_range = 0, throw_range, adminlog = TRUE, silent = FALSE, smoke = FALSE, color = LIGHT_COLOR_LAVA, tiny = FALSE)
-	return SSexplosions.explode(epicenter, devastation_range, heavy_impact_range, light_impact_range, weak_impact_range, flash_range, flame_range, throw_range, adminlog, silent, smoke, color, tiny)
+/**
+ * Makes a given atom explode.
+ *
+ * Arguments:
+ * - [origin][/atom]: The atom that's exploding.
+ * - devastation_range: The range at which the effects of the explosion are at their strongest.
+ * - heavy_impact_range: The range at which the effects of the explosion are relatively severe.
+ * - light_impact_range: The range at which the effects of the explosion are relatively weak.
+ * - light_impact_range: The range at which the effects of the explosion are very weak.
+ * - flash_range: The range at which the explosion flashes people.
+ * - flame_range: range to make flame objs in
+ * - throw_range: range the explosion throws people away
+ * - adminlog: Whether to log the explosion/report it to the administration.
+ * - silent: Whether to generate/execute sound effects.
+ * - smoke: Whether to generate a smoke cloud provided the explosion is powerful enough to warrant it.
+ * - color: light color that happens with the explosion
+ * - tiny: whether to try use the tiny explosion sprite for this
+ * - protect_epicenter: Whether to leave the epicenter turf unaffected by the explosion
+ * - explosion_cause: [Optional] The atom that caused the explosion, when different to the origin. Used for logging.
+ * - explosion_direction: The angle in which the explosion is pointed (for directional explosions.)
+ * - explosion_arc: The angle of the arc covered by a directional explosion (if 360 the explosion is non-directional.)
+ */
+/proc/explosion(atom/epicenter, devastation_range, heavy_impact_range, light_impact_range, weak_impact_range, flash_range, flame_range = 0, throw_range, adminlog = TRUE, silent = FALSE, smoke = FALSE, color = LIGHT_COLOR_LAVA, tiny = FALSE, protect_epicenter = FALSE, atom/explosion_cause = null, explosion_direction = 0, explosion_arc = 360, mob/blame_mob = null)
+	return SSexplosions.explode(arglist(args))
 
-/datum/controller/subsystem/explosions/proc/explode(atom/epicenter, devastation_range, heavy_impact_range, light_impact_range, weak_impact_range, flash_range, flame_range, throw_range, adminlog, silent, smoke, color, tiny)
+/**
+ * Makes a given atom explode.
+ *
+ * Arguments:
+ * - [origin][/atom]: The atom that's exploding.
+ * - devastation_range: The range at which the effects of the explosion are at their strongest.
+ * - heavy_impact_range: The range at which the effects of the explosion are relatively severe.
+ * - light_impact_range: The range at which the effects of the explosion are relatively weak.
+ * - light_impact_range: The range at which the effects of the explosion are very weak.
+ * - flash_range: The range at which the explosion flashes people.
+ * - flame_range: range to make flame objs in
+ * - throw_range: range the explosion throws people away
+ * - adminlog: Whether to log the explosion/report it to the administration.
+ * - silent: Whether to generate/execute sound effects.
+ * - smoke: Whether to generate a smoke cloud provided the explosion is powerful enough to warrant it.
+ * - color: light color that happens with the explosion
+ * - tiny: whether to try use the tiny explosion sprite for this
+ * - protect_epicenter: Whether to leave the epicenter turf unaffected by the explosion
+ * - explosion_cause: [Optional] The atom that caused the explosion, when different to the origin. Used for logging.
+ * - explosion_direction: The angle in which the explosion is pointed (for directional explosions.)
+ * - explosion_arc: The angle of the arc covered by a directional explosion (if 360 the explosion is non-directional.)
+ * - blame_mob: The actual mob that caused this explosion, if available
+ */
+/datum/controller/subsystem/explosions/proc/explode(atom/epicenter, devastation_range, heavy_impact_range, light_impact_range, weak_impact_range, flash_range, flame_range = 0, throw_range, adminlog = TRUE, silent = FALSE, smoke = FALSE, color = LIGHT_COLOR_LAVA, tiny = FALSE, protect_epicenter = FALSE, atom/explosion_cause = null, explosion_direction = 0, explosion_arc = 360, mob/blame_mob = null)
+	explosion_cause = explosion_cause ? explosion_cause : epicenter
+
 	epicenter = get_turf(epicenter)
 	if(!epicenter)
 		return
@@ -111,9 +157,9 @@ SUBSYSTEM_DEF(explosions)
 	var/started_at = REALTIMEOFDAY
 
 	if(adminlog)
-		log_game("Explosion with size ([devastation_range], [heavy_impact_range], [light_impact_range], [weak_impact_range], [flame_range]) in [loc_name(epicenter)]")
-		if(is_mainship_level(epicenter.z))
-			message_admins("Explosion with size ([devastation_range], [heavy_impact_range], [light_impact_range], [weak_impact_range], [flame_range]) in [ADMIN_VERBOSEJMP(epicenter)]")
+		log_attack("Explosion with size ([devastation_range], [heavy_impact_range], [light_impact_range], [weak_impact_range], [flame_range]) in [loc_name(epicenter)], Apparent cause: [explosion_cause]. Mob responsible: [key_name(blame_mob)].")
+		if(blame_mob && !is_centcom_level(epicenter.z))
+			msg_admin_ff("Explosion with size ([devastation_range], [heavy_impact_range], [light_impact_range], [weak_impact_range], [flame_range]) in [ADMIN_VERBOSEJMP(epicenter)], Apparent cause: [ADMIN_LOOKUPFLW(explosion_cause)]. Mob responsible: [ADMIN_LOOKUPFLW(blame_mob)]")
 
 	if(max_range >= 6 || heavy_impact_range)
 		new /obj/effect/temp_visual/shockwave(epicenter, max_range)
@@ -123,11 +169,7 @@ SUBSYSTEM_DEF(explosions)
 	// Calculate far explosion sound range. Only allow the sound effect for heavy/devastating explosions.
 	// 3/7/14 will calculate to 80 + 35
 
-	var/far_dist = 0
-	far_dist += weak_impact_range * 3
-	far_dist += light_impact_range * 4
-	far_dist += heavy_impact_range * 5
-	far_dist += devastation_range * 20
+	var/far_dist = max(devastation_range * 20, heavy_impact_range * 5, light_impact_range * 4, weak_impact_range * 3)
 
 	var/frequency = GET_RAND_FREQUENCY
 	var/sound/explosion_sound = SFX_EXPLOSION_LARGE
@@ -156,7 +198,8 @@ SUBSYSTEM_DEF(explosions)
 		listeners += ai_eye
 
 	for(var/mob/listener AS in listeners|SSmobs.dead_players_by_zlevel[epicenter.z])
-		var/dist = get_dist(get_turf(listener), epicenter)
+		var/turf/listener_turf = get_turf(listener)
+		var/dist = get_dist_euclidean(listener_turf, epicenter)
 		if(dist > far_dist)
 			continue
 
@@ -197,18 +240,7 @@ SUBSYSTEM_DEF(explosions)
 		for(var/mob/living/carbon/carbon_viewers in viewers(flash_range, epicenter))
 			carbon_viewers.flash_act()
 
-	var/list/turfs_in_range = block(
-		locate(
-			max(epicenter.x - max_range, 1),
-			max(epicenter.y - max_range, 1),
-			epicenter.z
-			),
-		locate(
-			min(epicenter.x + max_range, world.maxx),
-			min(epicenter.y + max_range, world.maxy),
-			epicenter.z
-			)
-		)
+	var/list/turfs_in_range = prepare_explosion_turfs(max_range, epicenter, protect_epicenter, explosion_direction, explosion_arc)
 
 	var/throw_strength //used here for epicenter and also later for every other turf
 	if(devastation_range > 0)
@@ -227,10 +259,12 @@ SUBSYSTEM_DEF(explosions)
 		if(flame_range > 0) //this proc shouldn't be used for flames only, but here we are
 			if(usr)
 				to_chat(usr, span_narsiesmall("Please don't use explosions for flames-only, use flame_radius()"))
+			stack_trace("Please don't use explosions for flames-only, use flame_radius()")
 			flameturf += turfs_in_range
 		if(throw_range > 0) //admemes, what have you done
 			if(usr)
 				to_chat(usr, span_narsie("Stop using explosions for memes!"))
+			stack_trace("Please don't use explosions for throws")
 			for(var/t in turfs_in_range)
 				var/turf/throw_turf = t
 				throwTurf[throw_turf] += list(epicenter)
@@ -348,6 +382,87 @@ This way we'll be able to draw the explosion's expansion path without having to 
 	weakTurf -= T
 	flameturf -= T
 	throwTurf -= T
+
+/// Returns a list of turfs in X range from the epicenter
+/// Returns in a unique order, spiraling outwards
+/// This is done to ensure our progressive cache of blast resistance is always valid
+/// This is quite fast
+/proc/prepare_explosion_turfs(range, turf/epicenter, protect_epicenter, explosion_direction, explosion_arc)
+	var/list/outlist = list()
+	var/list/candidates = list()
+	// Add in the center if it's not protected
+	if(!protect_epicenter)
+		outlist += epicenter
+
+	var/our_x = epicenter.x
+	var/our_y = epicenter.y
+	var/our_z = epicenter.z
+
+	var/max_x = world.maxx
+	var/max_y = world.maxy
+
+	// Work out the angles to explode between
+	var/first_angle_limit = WRAP(explosion_direction - explosion_arc * 0.5, 0, 360)
+	var/second_angle_limit = WRAP(explosion_direction + explosion_arc * 0.5, 0, 360)
+
+	// Get everything in the right order
+	var/lower_angle_limit
+	var/upper_angle_limit
+	var/do_directional
+	var/reverse_angle
+
+	// Work out which case we're in
+	if(first_angle_limit == second_angle_limit) // CASE A: FULL CIRCLE
+		do_directional = FALSE
+	else if(first_angle_limit < second_angle_limit) // CASE B: When the arc does not cross 0 degrees
+		lower_angle_limit = first_angle_limit
+		upper_angle_limit = second_angle_limit
+		do_directional = TRUE
+		reverse_angle = FALSE
+	else if (first_angle_limit > second_angle_limit) // CASE C: When the arc crosses 0 degrees
+		lower_angle_limit = second_angle_limit
+		upper_angle_limit = first_angle_limit
+		do_directional = TRUE
+		reverse_angle = TRUE
+
+	for(var/i in 1 to range)
+		var/lowest_x = our_x - i
+		var/lowest_y = our_y - i
+		var/highest_x = our_x + i
+		var/highest_y = our_y + i
+		// top left to one before top right
+		if(highest_y <= max_y)
+			candidates += block(
+				lowest_x, highest_y, our_z,
+				highest_x - 1, highest_y, our_z
+			)
+		// top right to one before bottom right
+		if(highest_x <= max_x)
+			candidates += block(
+				highest_x, highest_y, our_z,
+				highest_x, lowest_y + 1, our_z
+			)
+		// bottom right to one before bottom left
+		if(lowest_y >= 1)
+			candidates += block(
+				highest_x, lowest_y, our_z,
+				lowest_x + 1, lowest_y, our_z
+			)
+		// bottom left to one before top left
+		if(lowest_x >= 1)
+			candidates += block(
+				lowest_x, lowest_y, our_z,
+				lowest_x, highest_y - 1, our_z
+			)
+
+	if(!do_directional)
+		outlist += candidates
+	else
+		for(var/turf/candidate as anything in candidates)
+			var/angle = Get_Angle(epicenter, candidate)
+			if(ISINRANGE(angle, lower_angle_limit, upper_angle_limit) ^ reverse_angle)
+				outlist += candidate
+	return outlist
 
 /datum/controller/subsystem/explosions/fire(resumed = FALSE)
 	if(!(length(weakTurf) || length(lowTurf) || length(medTurf) || length(highTurf) || length(flameturf) || length(throwTurf) || length(weakMovAtom) ||length(lowMovAtom) || length(medMovAtom) || length(highMovAtom)))

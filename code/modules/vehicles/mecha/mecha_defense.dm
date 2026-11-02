@@ -60,8 +60,11 @@
 	user.visible_message(span_danger("[user] hits [src]. Nothing happens."), null, null, COMBAT_MESSAGE_RANGE)
 	log_message("Attack by hand/paw (no damage). Attacker - [user].", LOG_MECHA, color="red")
 
-/obj/vehicle/sealed/mecha/bullet_act(obj/projectile/proj, def_zone, piercing_hit) //wrapper
-	log_message("Hit by projectile. Type: [proj]([proj.ammo.damage_type]).", LOG_MECHA, color="red")
+/obj/vehicle/sealed/mecha/bullet_act(atom/movable/projectile/proj, def_zone, piercing_hit) //wrapper
+	var/known_firer = key_name(proj.firer)
+	if(known_firer)
+		known_firer += " fired by [known_firer]"
+	log_message("Hit by projectile [known_firer]. Type: [proj]([proj.ammo.damage_type]).", LOG_MECHA, color="red")
 	// yes we *have* to run the armor calc proc here I love tg projectile code too
 	try_damage_component(
 		modify_by_armor(proj.damage, proj.ammo.armor_type, proj.ammo.penetration, attack_dir = REVERSE_DIR(proj.dir)),
@@ -151,7 +154,7 @@
 	if(time_left)
 		disable_time += time_left
 		deltimer(emp_timer)
-	emp_timer = addtimer(CALLBACK(src, TYPE_PROC_REF(/obj/vehicle/sealed/mecha, restore_equipment)), disable_time, TIMER_DELETE_ME|TIMER_STOPPABLE)
+	emp_timer = addtimer(CALLBACK(src, TYPE_PROC_REF(/obj/vehicle/sealed/mecha, emp_restore)), disable_time, TIMER_DELETE_ME|TIMER_STOPPABLE)
 	equipment_disabled = TRUE
 	set_mouse_pointer()
 
@@ -180,6 +183,17 @@
 /obj/vehicle/sealed/mecha/attackby(obj/item/W, mob/user, params)
 	if(istype(W, /obj/item/mecha_ammo))
 		ammo_resupply(W, user)
+		return
+
+	if(istype(W, /obj/item/repairpack))
+		if(max_repairpacks <=0)
+			balloon_alert(user, "Repairpacks not supported")
+			return
+		if(stored_repairpacks >= max_repairpacks)
+			balloon_alert(user, "Repairpacks full")
+			return
+		stored_repairpacks++
+		qdel(W)
 		return
 
 	if(isidcard(W))
@@ -263,7 +277,7 @@
 	if(.)
 		try_damage_component(., user.zone_selected)
 
-/obj/vehicle/sealed/mecha/wrench_act(mob/living/user, obj/item/I)
+/obj/vehicle/sealed/mecha/wrench_act(mob/user, obj/item/tool)
 	..()
 	. = TRUE
 	if(construction_state == MECHA_SECURE_BOLTS)
@@ -274,7 +288,7 @@
 		construction_state = MECHA_SECURE_BOLTS
 		to_chat(user, span_notice("You tighten the securing bolts."))
 
-/obj/vehicle/sealed/mecha/crowbar_act(mob/living/user, obj/item/I)
+/obj/vehicle/sealed/mecha/crowbar_act(mob/user, obj/item/tool)
 	..()
 	. = TRUE
 	if(construction_state == MECHA_LOOSE_BOLTS)
@@ -285,8 +299,8 @@
 		construction_state = MECHA_LOOSE_BOLTS
 		to_chat(user, span_notice("You close the hatch to the power unit."))
 
-/obj/vehicle/sealed/mecha/welder_act(mob/living/user, obj/item/I)
-	return welder_repair_act(user, I, 100, 4 SECONDS, 0, SKILL_ENGINEER_ENGI, 2, 4 SECONDS)
+/obj/vehicle/sealed/mecha/welder_act(mob/user, obj/item/tool)
+	return welder_repair_act(user, tool, 100, 4 SECONDS, 0, SKILL_ENGINEER_ENGI, 2, 4 SECONDS)
 
 /obj/vehicle/sealed/mecha/proc/full_repair(charge_cell)
 	obj_integrity = max_integrity

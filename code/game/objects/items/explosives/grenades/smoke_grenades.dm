@@ -16,7 +16,7 @@
 
 /obj/item/explosive/grenade/smokebomb/prime()
 	var/datum/effect_system/smoke_spread/smoke = new smoketype()
-	playsound(loc, 'sound/effects/smoke_bomb.ogg', 25, TRUE)
+	playsound(loc, 'sound/effects/smoke_bomb.ogg', 25, TRUE, MEDIUM_SOUND_RANGE)
 	smoke.set_up(smokeradius, loc, smoke_duration)
 	smoke.start()
 	qdel(src)
@@ -119,3 +119,11 @@
 	icon_state = "ags_pgas"
 	det_time = 3 SECONDS
 	smokeradius = 4
+
+/obj/item/explosive/grenade/smokebomb/drain/pellet
+	name = "tanglefoot emitting system pellet"
+	desc = "A small pellet dropped from the sky. Emits tanglefoot on a landing position."
+	icon_state = "pellet_pgas"
+	det_time = 2 SECONDS
+	smokeradius = 10
+	smoke_duration = 15

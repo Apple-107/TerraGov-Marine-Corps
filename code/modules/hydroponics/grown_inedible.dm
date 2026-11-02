@@ -34,7 +34,6 @@
 		reagents.add_reagent(rid,max(1,rtotal))
 
 /obj/item/grown/log
-	name = "towercap"
 	name = "tower-cap log"
 	desc = "It's better than bad, it's good!"
 	icon_state = "logs"
@@ -44,7 +43,7 @@
 	w_class = WEIGHT_CLASS_NORMAL
 	throw_speed = 3
 	throw_range = 3
-	attack_verb = list("bashed", "battered", "bludgeoned", "whacked")
+	attack_verb = list("bashes", "batters", "bludgeons", "whacks")
 
 
 /obj/item/grown/log/attackby(obj/item/I, mob/user, params)
@@ -90,7 +89,7 @@
 	w_class = WEIGHT_CLASS_SMALL
 	throw_speed = 1
 	throw_range = 3
-	attack_verb = list("stung")
+	attack_verb = list("stings")
 	hitsound = ""
 
 	var/potency_divisior = 5
@@ -115,7 +114,7 @@
 
 /obj/item/grown/nettle/proc/lose_leaves(mob/user)
 	if(force > 0)
-		playsound(loc, 'sound/weapons/bladeslice.ogg', 25, 1)
+		playsound(loc, 'sound/weapons/bladeslice.ogg', 25, 1, MEDIUM_SOUND_RANGE)
 		force -= rand(1,(force/3)+1) // When you whack someone with it, leaves fall off
 
 	sleep(0.1 SECONDS)

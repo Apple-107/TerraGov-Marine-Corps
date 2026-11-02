@@ -24,7 +24,7 @@
 	if (locked)
 		if(ismultitool(O))
 			to_chat(user, span_warning("Resetting circuitry..."))
-			playsound(user, 'sound/machines/lockreset.ogg', 25, 1)
+			playsound(user, 'sound/machines/lockreset.ogg', 25, 1, MEDIUM_SOUND_RANGE)
 			if(do_after(user, 20, NONE, src, BUSY_ICON_BUILD))
 				locked = FALSE
 				to_chat(user, "<span class = 'caution'>You disable the locking modules.</span>")
@@ -39,7 +39,7 @@
 					spawn(10) update_icon()
 				return
 			else
-				playsound(user, 'sound/effects/Glasshit.ogg', 25, 1) //We don't want this playing every time
+				playsound(user, 'sound/effects/Glasshit.ogg', 25, 1, MEDIUM_SOUND_RANGE)
 			if(W.force < 15)
 				to_chat(user, span_notice("The cabinet's protective glass glances off the hit."))
 			else
@@ -89,7 +89,7 @@
 				sleep(5 SECONDS)
 				src.locked = 1
 				to_chat(user, span_notice("You re-enable the locking modules."))
-				playsound(user, 'sound/machines/lockenable.ogg', 25, 1)
+				playsound(user, 'sound/machines/lockenable.ogg', 25, 1, MEDIUM_SOUND_RANGE)
 				if(do_after(user,20, NONE, src, BUSY_ICON_BUILD))
 					locked = TRUE
 					to_chat(user, "<span class = 'caution'> You re-enable the locking modules.</span>")
@@ -149,7 +149,7 @@
 
 /obj/structure/closet/fireaxecabinet/verb/toggle_openness() //nice name, huh? HUH?! -Erro //YEAH -Agouri
 	set name = "Open/Close"
-	set category = "Object"
+	set category = "IC.Object"
 
 	if (locked || smashed)
 		if(src.locked)
@@ -163,7 +163,7 @@
 
 /obj/structure/closet/fireaxecabinet/verb/remove_fire_axe()
 	set name = "Remove Fire Axe"
-	set category = "Object"
+	set category = "IC.Object"
 
 	if (istype(usr, /mob/living/carbon/xenomorph))
 		return

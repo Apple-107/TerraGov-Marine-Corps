@@ -1,5 +1,6 @@
 /mob/new_player
 	invisibility = INVISIBILITY_ABSTRACT
+	lighting_cutoff = LIGHTING_CUTOFF_FULLBRIGHT
 	stat = DEAD
 	density = FALSE
 	canmove = FALSE
@@ -29,6 +30,7 @@
 	if(ready)
 		GLOB.ready_players -= src
 	GLOB.new_player_list -= src
+	SSticker.queued_players -= src
 	assigned_role = null
 	assigned_squad = null
 	new_character = null
@@ -182,7 +184,14 @@
 	return "\nYou might have to wait a certain time to respawn or be unable to, depending on the game mode!"
 
 /datum/game_mode/infestation/observe_respawn_message()
-	return "\nYou will have to wait at least [SSticker.mode?.respawn_time * 0.1 / 60] minutes before being able to respawn as a marine!"
+	. = "\nYou will have to wait at least [SSticker.mode?.respawn_time * 0.1 / 60] minutes before being able to respawn as a marine!"
+	var/datum/hive_status/normal_hive = GLOB.hive_datums[XENO_HIVE_NORMAL]
+	if(!normal_hive)
+		return
+	if(length(normal_hive.candidates) <= 2)
+		return
+	. += " There are [length(normal_hive.candidates)] people in the larva queue."
+
 
 /mob/new_player/proc/late_choices()
 	var/list/dat = list("<div class='notice'>Round Duration: [DisplayTimeText(world.time - SSticker.round_start_time)]</div>")
@@ -295,7 +304,6 @@
 	if(!user)
 		user = src
 	DIRECT_OUTPUT(user, browse(null, "window=latechoices")) //closes late choices window
-	DIRECT_OUTPUT(user, browse(null, "window=playersetup")) //closes the player setup window
 	user.stop_sound_channel(CHANNEL_LOBBYMUSIC)
 
 
@@ -310,7 +318,7 @@
 
 /mob/new_player/get_gender()
 	if(!client?.prefs)
-		. = ..()
+		return ..()
 	return client.prefs.gender
 
 /mob/new_player/proc/create_character()
@@ -443,10 +451,6 @@
 /mob/new_player/proc/attempt_late_join(queue_override = FALSE)
 	if(!SSticker?.mode || SSticker.current_state != GAME_STATE_PLAYING)
 		to_chat(src, span_warning("The round is either not ready, or has already finished."))
-		return
-
-	if(SSticker.mode.round_type_flags & MODE_NO_LATEJOIN)
-		to_chat(src, span_warning("Sorry, you cannot late join during [SSticker.mode.name]. You have to start at the beginning of the round. You may observe or try to join as an alien, if possible."))
 		return
 
 	if(queue_override)

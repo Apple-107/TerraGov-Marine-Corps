@@ -89,13 +89,13 @@
 ///The effects applied to mobs in the outer_range
 /obj/item/explosive/grenade/flashbang/proc/outer_effect(turf/T , mob/living/carbon/M, ear_safety)
 	if(!ear_safety)
-		M.apply_effect(16 SECONDS, STUN)
+		M.apply_effect(16 SECONDS, EFFECT_STUN)
 		M.adjust_ear_damage(rand(0, 3),8)
 
 ///The effects applied to mobs outside of outer_range
 /obj/item/explosive/grenade/flashbang/proc/max_range_effect(turf/T , mob/living/carbon/M, ear_safety)
 	if(!ear_safety)
-		M.apply_effect(8 SECONDS, STUN)
+		M.apply_effect(8 SECONDS, EFFECT_STUN)
 		M.adjust_ear_damage(rand(0, 1),6)
 
 //Slows and staggers instead of hardstunning, balanced for HvH
@@ -124,10 +124,10 @@
 
 	if(ear_safety > 0)
 		M.adjust_stagger(3 SECONDS)
-		M.add_slowdown(3)
+		M.slowdown(3)
 	else
 		M.adjust_stagger(6 SECONDS)
-		M.add_slowdown(6)
+		M.slowdown(6)
 		if((prob(14) || (M == src.loc && prob(70))))
 			M.adjust_ear_damage(rand(1, 10),15)
 		else
@@ -139,7 +139,7 @@
 
 	if(!ear_safety)
 		M.adjust_stagger(4 SECONDS)
-		M.add_slowdown(4)
+		M.slowdown(4)
 		M.adjust_ear_damage(rand(0, 3),8)
 
 /obj/item/explosive/grenade/flashbang/stun/max_range_effect(turf/T , mob/living/carbon/M, ear_safety)
@@ -148,5 +148,5 @@
 
 	if(!ear_safety)
 		M.adjust_stagger(2 SECONDS)
-		M.add_slowdown(2)
+		M.slowdown(2)
 		M.adjust_ear_damage(rand(0, 1),6)

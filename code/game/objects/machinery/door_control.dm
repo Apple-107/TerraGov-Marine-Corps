@@ -6,20 +6,21 @@
 	desc = "It controls doors, remotely."
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "doorctrl0"
-	desc = "A remote control-switch for a door."
 	power_channel = ENVIRON
+	anchored = TRUE
+	use_power = IDLE_POWER_USE
+	idle_power_usage = 2
+	active_power_usage = 4
+	layer = ABOVE_OBJ_LAYER
+	mouse_over_pointer = MOUSE_HAND_POINTER
+
+	var/pressed = FALSE
 	var/id = null
 	var/range = 10
 	var/normaldoorcontrol = CONTROL_POD_DOORS
 	var/desiredstate = 0 // Zero is closed, 1 is open.
 	var/specialfunctions = 1
 	var/directional = TRUE //if true we apply directional offsets, if not the door control is free floating
-	anchored = TRUE
-	var/pressed = FALSE
-	use_power = IDLE_POWER_USE
-	idle_power_usage = 2
-	active_power_usage = 4
-	layer = ABOVE_OBJ_LAYER
 
 /obj/machinery/door_control/unmeltable
 	resistance_flags = RESIST_ALL
@@ -81,6 +82,7 @@
 					D.safe = 1
 
 /obj/machinery/door_control/proc/handle_pod()
+	SIGNAL_HANDLER
 	for(var/obj/machinery/door/poddoor/M in GLOB.machines)
 		if(M.id == id)
 			if(M.density)
@@ -106,6 +108,20 @@
 			flick("olddoorctrl-denied",src)
 		return
 
+	button_pressed()
+
+
+/obj/machinery/door_control/attack_ai(mob/living/silicon/ai/AI)
+	return attack_hand(AI)
+
+
+/obj/machinery/door_control/proc/unpress()
+	pressed = FALSE
+	update_icon()
+
+
+/// Handles anything that should happen when the button is pressed.
+/obj/machinery/door_control/proc/button_pressed()
 	use_power(active_power_usage)
 	pressed = TRUE
 	update_icon()
@@ -119,14 +135,6 @@
 	desiredstate = !desiredstate
 	addtimer(CALLBACK(src, PROC_REF(unpress)), 15, TIMER_OVERRIDE|TIMER_UNIQUE)
 
-
-/obj/machinery/door_control/attack_ai(mob/living/silicon/ai/AI)
-	return attack_hand(AI)
-
-
-/obj/machinery/door_control/proc/unpress()
-	pressed = FALSE
-	update_icon()
 
 /obj/machinery/door_control/update_icon_state()
 	. = ..()
@@ -276,6 +284,10 @@
 	id = "ROlobby"
 	req_one_access = list(ACCESS_MARINE_CARGO, ACCESS_MARINE_LOGISTICS)
 
+/obj/machinery/door_control/mainship/req_hvh
+	name = "Requisition Shutters"
+	id = "req_hvh"
+
 /obj/machinery/door_control/mainship/req/ro1
 	name = "RO Line 1 Shutters"
 	id = "ROlobby1"
@@ -347,3 +359,10 @@
 
 /obj/machinery/door_control/old/unmeltable
 	resistance_flags = RESIST_ALL
+
+/obj/machinery/door_control/minidropship
+	id = "minidropship_podlock"
+
+/obj/machinery/door_control/minidropship/Initialize()
+	. = ..()
+	RegisterSignal(SSdcs, COMSIG_GLOB_TADPOLE_SHUTTER, PROC_REF(handle_pod))

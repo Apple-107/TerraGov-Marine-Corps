@@ -3,6 +3,10 @@
 	desc = "A device that delivers powerful shocks to resuscitate incapacitated patients."
 	icon = 'icons/obj/items/defibrillator.dmi'
 	icon_state = "defib"
+	worn_icon_list = list(
+		slot_l_hand_str = 'icons/mob/inhands/equipment/medical_left.dmi',
+		slot_r_hand_str = 'icons/mob/inhands/equipment/medical_right.dmi',
+	)
 	worn_icon_state = "defib"
 	atom_flags = CONDUCT
 	item_flags = NOBLUDGEON
@@ -96,9 +100,6 @@
 		return
 	if(!istype(user))
 		return
-	if(!COOLDOWN_CHECK(src, defib_cooldown))
-		balloon_alert(user, "toggled too recently")
-		return
 
 	//Job knowledge requirement
 	var/skill = user.skills.getRating(SKILL_MEDICAL)
@@ -108,15 +109,14 @@
 		if(!do_after(user, SKILL_TASK_AVERAGE - (SKILL_TASK_VERY_EASY * skill), NONE, src, BUSY_ICON_UNSKILLED))
 			return
 
-	COOLDOWN_START(src, defib_cooldown, 2 SECONDS)
 	ready = !ready
 	user.visible_message(span_notice("[user] turns [src] [ready? "on and opens the cover" : "off and closes the cover"]."),
 	span_notice("You turn [src] [ready? "on and open the cover" : "off and close the cover"]."))
-	playsound(get_turf(src), SFX_SPARKS, 25, TRUE, 4)
+	playsound(get_turf(src), SFX_SPARKS, 25, TRUE, SUPPRESSED_SOUND_RANGE)
 	if(ready)
-		playsound(get_turf(src), 'sound/items/defib_safetyOn.ogg', 45, 0)
+		playsound(get_turf(src), 'sound/items/defib_safetyOn.ogg', 45, FALSE, SHORT_SOUND_RANGE)
 	else
-		playsound(get_turf(src), 'sound/items/defib_safetyOff.ogg', 45, 0)
+		playsound(get_turf(src), 'sound/items/defib_safetyOff.ogg', 45, FALSE, SHORT_SOUND_RANGE)
 	update_icon()
 
 
@@ -141,10 +141,10 @@
 ///Proc for checking that the defib is ready to operate
 /obj/item/defibrillator/proc/defib_ready(mob/living/carbon/human/patient, mob/living/carbon/human/user)
 	if(!ready)
-		balloon_alert(user, "take the paddles out")
+		balloon_alert(user, "take the paddles out!")
 		return FALSE
 	if(!ishuman(patient))
-		to_chat(user, span_warning("The instructions on [src] don't mention how to resuscitate that..."))
+		balloon_alert(user, "that's not a human!")
 		return FALSE
 	if(patient.stat != DEAD)
 		user.visible_message(span_warning("[icon2html(src, viewers(user))] \The [src] buzzes: Patient is not in a valid state. Operation aborted."))
@@ -157,14 +157,12 @@
 ///Split proc that actually does the defibrillation. Separated to be used more easily by medical gloves
 /obj/item/defibrillator/proc/defibrillate(mob/living/carbon/human/patient, mob/living/carbon/human/user)
 	if(user.do_actions) //Currently doing something
-		balloon_alert(user, "busy")
+		balloon_alert(user, "busy!")
 		return
 
-	if(!COOLDOWN_CHECK(src, defib_cooldown))
-		balloon_alert(user, "recharging")
+	if(!COOLDOWN_FINISHED(src, defib_cooldown))
+		balloon_alert(user, "recharging!")
 		return
-
-	COOLDOWN_START(src, defib_cooldown, 2 SECONDS) // 2 seconds before you can try again, initially
 
 	//job knowledge requirement
 	var/medical_skill = user.skills.getRating(SKILL_MEDICAL)
@@ -214,7 +212,7 @@
 
 	user.visible_message(span_notice("[user] starts setting up the paddles on [patient]'s chest."),
 	span_notice("You start setting up the paddles on [patient]'s chest."))
-	playsound(get_turf(src),'sound/items/defib_charge.ogg', 45, 0) // Don't vary this, it should be exactly 7 seconds
+	playsound(get_turf(src),'sound/items/defib_charge.ogg', 45) // Don't vary this, it should be exactly 7 seconds
 
 	if(!do_after(user, 7 SECONDS, NONE, patient, BUSY_ICON_FRIENDLY, BUSY_ICON_MEDICAL))
 		to_chat(user, span_warning("You stop setting up the paddles on [patient]'s chest."))
@@ -224,15 +222,16 @@
 		return
 
 	// do the defibrillation effects now and check revive parameters in a moment
+	. = TRUE
 	sparks.start()
 	dcell.use(charge_cost)
 	update_icon()
-	playsound(get_turf(src), 'sound/items/defib_release.ogg', 45, 1)
+	playsound(get_turf(src), 'sound/items/defib_release.ogg', 45, TRUE)
 	user.visible_message(span_notice("[user] shocks [patient] with the paddles."),
 	span_notice("You shock [patient] with the paddles."))
 	patient.visible_message(span_warning("[patient]'s body convulses a bit."))
 
-	COOLDOWN_START(src, defib_cooldown, 1 SECONDS) // 1 second before you can try again if you finish the do_after
+	COOLDOWN_START(src, defib_cooldown, DEFIBRILLATOR_COOLDOWN)
 
 	var/datum/internal_organ/heart/heart = patient.get_organ_slot(ORGAN_SLOT_HEART)
 	if(!issynth(patient) && !isrobot(patient) && heart && prob(25))
@@ -282,7 +281,7 @@
 
 	if(fail_reason)
 		user.visible_message(span_warning("[icon2html(src, viewers(user))] \The [src] buzzes: Resuscitation failed - [fail_reason]"))
-		playsound(src, 'sound/items/defib_failed.ogg', 45, FALSE)
+		playsound(src, 'sound/items/defib_failed.ogg', 45)
 		return
 
 	ghost = patient.get_ghost(TRUE)
@@ -290,17 +289,17 @@
 		ghost.reenter_corpse()
 
 	if(!patient.client)
-		user.visible_message(span_warning("[icon2html(src, viewers(user))] \The [src] buzzes: No soul detected."))
+		user.visible_message(span_warning("[icon2html(src, viewers(user))] \The [src] buzzes: No soul detected. Patient may not appear alert temporarily or permanently."))
 
 	to_chat(patient, span_notice("<i><font size=4>You suddenly feel a spark and your consciousness returns, dragging you back to the mortal plane...</font></i>"))
 	user.visible_message(span_notice("[icon2html(src, viewers(user))] \The [src] beeps: Resuscitation successful."))
-	playsound(get_turf(src), 'sound/items/defib_success.ogg', 45, 0)
+	playsound(get_turf(src), 'sound/items/defib_success.ogg', 45)
 	patient.updatehealth()
 	patient.resuscitate() // time for a smoke
 	patient.emote("gasp")
 	patient.flash_act()
-	patient.apply_effect(10, EYE_BLUR)
-	patient.apply_effect(20 SECONDS, PARALYZE)
+	patient.apply_effect(10, EFFECT_EYE_BLUR)
+	patient.apply_effect(20 SECONDS, EFFECT_UNCONSCIOUS)
 
 	ghost = patient.get_ghost(TRUE) // just in case they re-entered their body
 	if(ghost) // register a signal to bring them into their body on reconnect
@@ -309,8 +308,8 @@
 	//Checks if the patient is wearing a camera. Then it turns it on if it's off.
 	if(istype(patient.wear_ear, /obj/item/radio/headset/mainship))
 		var/obj/item/radio/headset/mainship/cam_headset = patient.wear_ear
-		if(!(cam_headset?.camera?.status))
-			cam_headset.camera.toggle_cam(null, FALSE)
+		if(!(cam_headset?.camera?.camera_flags & CAMERA_TURNED_ON))
+			cam_headset.camera.toggle_cam()
 	if(user.client)
 		var/datum/personal_statistics/personal_statistics = GLOB.personal_statistics_list[user.ckey]
 		personal_statistics.revives++
@@ -328,7 +327,7 @@
 	name = "emergency defibrillator"
 	desc = "A device that delivers powerful shocks to resuscitate incapacitated patients. This one appears to be a civillian model."
 	icon_state = "civ_defib"
-	worn_icon_state = "defib"
+	worn_icon_state = "civ_defib"
 
 ///used for advanced medical (defibrillator) gloves: defibrillator_gloves.dm
 /obj/item/defibrillator/internal

@@ -92,7 +92,7 @@
 	current_user = null
 	user.unset_interaction()
 	user.client.view_size.unsupress()
-	playsound(src, 'sound/machines/terminal_off.ogg', 25, 0)
+	playsound(src, 'sound/machines/terminal_off.ogg', 25, 0, MEDIUM_SOUND_RANGE)
 
 
 /obj/machinery/computer/camera_advanced/check_eye(mob/living/user)
@@ -225,7 +225,6 @@
 
 /mob/camera/aiEye/remote
 	name = "Inactive Camera Eye"
-	ai_detector_visible = FALSE
 	/// The delay applied after moving to a tile.
 	var/move_delay = 0.1 SECONDS
 	/// Internal variable used to keep track of the amount of tiles we have moved in the same direction
@@ -243,9 +242,8 @@
 	var/image/user_image = null
 
 /mob/camera/aiEye/remote/update_remote_sight(mob/living/user)
-	user.see_invisible = SEE_INVISIBLE_LIVING
-	user.sight = SEE_SELF|SEE_MOBS|SEE_OBJS|SEE_TURFS|SEE_BLACKNESS
-	user.see_in_dark = 2
+	user.set_invis_see(SEE_INVISIBLE_LIVING)
+	user.set_sight(SEE_SELF|SEE_MOBS|SEE_OBJS|SEE_TURFS)
 	return TRUE
 
 /mob/camera/aiEye/remote/reset_glide_size() //because this mob only moves via relay move which has a hardcoded move delay var, we set for that specifically
@@ -294,8 +292,7 @@
 		user_image = image(icon, top, icon_state, FLY_LAYER)
 		eye_user.client.images += user_image
 
-
-/mob/camera/aiEye/remote/relaymove(mob/user, direct)
+/mob/camera/aiEye/remote/relaymove(mob/user, direction)
 	if(istype(origin, /obj/machinery/computer/camera_advanced))
 		var/obj/machinery/computer/camera_advanced/CA = origin
 		CA.tracking_target = null
@@ -303,7 +300,7 @@
 		return
 	tiles_moved = ((cooldown + move_delay * 5) > world.time) ? 0 : tiles_moved
 	cooldown = world.time + move_delay * (1 - acceleration * tiles_moved / 10)
-	var/turf/T = get_turf(get_step(src, direct))
+	var/turf/T = get_step_multiz(src, direction)
 	// check for dir change , if we changed then remove all acceleration
 	if(get_dir(src, T) != direction_moved)
 		tiles_moved = 0
@@ -325,7 +322,7 @@
 		faction = new_faction
 	hud_possible = list(GLOB.faction_to_squad_hud[faction])
 	prepare_huds()
-	var/datum/atom_hud/squad/squad_hud = GLOB.huds[GLOB.faction_to_data_hud[faction]]
+	var/datum/atom_hud/squad_hud = GLOB.huds[GLOB.faction_to_data_hud[faction]]
 	squad_hud.add_to_hud(src)
 
 	var/image/holder = hud_list[hud_possible[1]]
@@ -335,7 +332,7 @@
 	holder.icon_state = icon_state_on
 
 /mob/camera/aiEye/remote/hud/Destroy()
-	var/datum/atom_hud/squad/squad_hud = GLOB.huds[GLOB.faction_to_data_hud[faction]]
+	var/datum/atom_hud/squad_hud = GLOB.huds[GLOB.faction_to_data_hud[faction]]
 	squad_hud.remove_from_hud(src)
 	return ..()
 
@@ -422,16 +419,16 @@
 		if(length(tempnetwork))
 			T["[C.c_tag][C.can_use() ? "" : " (Deactivated)"]"] = C
 
-	playsound(origin, 'sound/machines/terminal_prompt.ogg', 25, 0)
+	playsound(origin, 'sound/machines/terminal_prompt.ogg', 25, 0, MEDIUM_SOUND_RANGE)
 	var/camera = tgui_input_list(owner, "Choose which camera you want to view?", "Cameras", T)
 	var/obj/machinery/camera/C = T[camera]
-	playsound(src, SFX_TERMINAL_TYPE, 25, 0)
+	playsound(src, SFX_TERMINAL_TYPE, 25, 0, MEDIUM_SOUND_RANGE)
 
 	if(!C)
-		playsound(origin, 'sound/machines/terminal_prompt_deny.ogg', 25, 0)
+		playsound(origin, 'sound/machines/terminal_prompt_deny.ogg', 25, 0, MEDIUM_SOUND_RANGE)
 		return
 
-	playsound(origin, 'sound/machines/terminal_prompt_confirm.ogg', 25, 0)
+	playsound(origin, 'sound/machines/terminal_prompt_confirm.ogg', 25, 0, MEDIUM_SOUND_RANGE)
 	remote_eye.setLoc(get_turf(C))
 	L.overlay_fullscreen("flash", /atom/movable/screen/fullscreen/flash/noise)
 	L.clear_fullscreen("flash", 3)

@@ -10,7 +10,7 @@
 	throwforce = 5
 	throw_speed = 5
 	throw_range = 20
-	attack_verb = list("hit", "whacked", "sliced")
+	attack_verb = list("hits", "whacks", "slices")
 	max_amount = 20
 	merge_type = /obj/item/stack/barbed_wire
 
@@ -57,7 +57,7 @@
 	force = 15
 	throwforce = 10
 	throw_range = 5
-	attack_verb = list("hit", "whacked", "sliced")
+	attack_verb = list("hits", "whacks", "slices")
 	singular_name = "bundle"
 	max_amount = 10
 	merge_type = /obj/item/stack/razorwire
@@ -106,7 +106,7 @@
 		M.setDir(user.dir)
 		user.visible_message(span_notice("[user] assembles a [M]."),
 		span_notice("You assemble a [M]."))
-		playsound(src, 'sound/effects/barbed_wire_movement.ogg', 25, 1)
+		playsound(src, 'sound/effects/barbed_wire_movement.ogg', 25, 1, MEDIUM_SOUND_RANGE)
 		M.update_icon()
 		use(1)
-	user.record_structures_built()
+		user.record_structures_built()

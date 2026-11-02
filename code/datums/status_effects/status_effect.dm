@@ -1,7 +1,6 @@
 //Status effects are used to apply temporary or permanent effects to mobs. Mobs are aware of their status effects at all times.
 //This file contains their code, plus code for applying and removing them.
 //When making a new status effect, add a define to status_effects.dm in __DEFINES for ease of use!
-
 /datum/status_effect
 	///Used for screen alerts
 	var/id = "effect"
@@ -19,6 +18,8 @@
 	var/alert_type = /atom/movable/screen/alert/status_effect
 	///the alert itself, if it exists
 	var/atom/movable/screen/alert/status_effect/linked_alert = null
+	///Special behavior falgs
+	var/status_flags = NONE
 
 /datum/status_effect/New(list/arguments)
 	on_creation(arglist(arguments))
@@ -31,6 +32,9 @@
 	if(!owner || !on_apply())
 		qdel(src)
 		return
+
+	if(status_flags & STATUS_FLAG_CHECK_OWNER_DEATH)
+		RegisterSignal(owner, COMSIG_MOB_DEATH, PROC_REF(on_owner_death))
 	if(duration != -1)
 		duration = world.time + duration
 	tick_interval = world.time + tick_interval
@@ -58,8 +62,8 @@
 	if(tick_interval < world.time)
 		tick(delta_time)
 		tick_interval = world.time + initial(tick_interval)
-	if(duration != -1 && duration < world.time)
-		qdel(src)
+
+	check_duration()
 
 //Called whenever the buff is applied; returning FALSE will cause it to autoremove itself
 /datum/status_effect/proc/on_apply()
@@ -84,6 +88,27 @@
 
 /datum/status_effect/proc/nextmove_adjust()
 	return 0
+
+/// Use this for manually checking if the effect should've ended, when FASTPROCESSING just isn't fast enough
+/datum/status_effect/proc/check_duration()
+	if(duration != -1 && duration < world.time)
+		qdel(src)
+		return TRUE
+	return FALSE
+
+///Effects on owner death. Requires STATUS_FLAG_CHECK_OWNER_DEATH
+/datum/status_effect/proc/on_owner_death(datum/source)
+	SIGNAL_HANDLER
+	if(status_flags & STATUS_FLAG_OWNER_DEATH_DEL)
+		qdel(src)
+		return
+	STOP_PROCESSING(SSfastprocess, src)
+	RegisterSignal(owner, COMSIG_MOB_REVIVE, PROC_REF(on_owner_revive))
+
+///Any effects when the owner comes back to life if STATUS_FLAG_CHECK_OWNER_DEATH is used
+/datum/status_effect/proc/on_owner_revive(datum/source)
+	SIGNAL_HANDLER
+	START_PROCESSING(SSfastprocess, src)
 
 ////////////////
 // ALERT HOOK //
@@ -237,7 +262,8 @@
 			on_threshold_drop()
 		if(stacks_added > 0)
 			tick_interval += delay_before_decay //refreshes time until decay
-		stacks = min(stacks, max_stacks)
+		if(isnum(max_stacks))
+			stacks = min(stacks, max_stacks)
 		status_overlay.icon_state = "[overlay_state][stacks]"
 		status_underlay.icon_state = "[underlay_state][stacks]"
 		owner.add_overlay(status_overlay)
@@ -256,8 +282,7 @@
 		return FALSE
 	status_overlay = mutable_appearance(overlay_file, "[overlay_state][stacks]")
 	status_underlay = mutable_appearance(underlay_file, "[underlay_state][stacks]")
-	var/icon/I = icon(owner.icon, owner.icon_state, owner.dir)
-	var/icon_height = I.Height()
+	var/icon_height = owner.get_cached_height()
 	status_overlay.pixel_x = -owner.pixel_x
 	status_overlay.pixel_y = FLOOR(icon_height * 0.25, 1)
 	status_overlay.transform = matrix() * (icon_height/world.icon_size) //scale the status's overlay size based on the target's icon size

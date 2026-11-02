@@ -3,11 +3,13 @@
 	display_name = "Baneling"
 	upgrade_name = ""
 	caste_desc = "Gross, cute, bloated and ready to explode!"
+	base_strain_type = /mob/living/carbon/xenomorph/baneling
 	caste_type_path = /mob/living/carbon/xenomorph/baneling
 
 	tier = XENO_TIER_MINION
 	upgrade = XENO_UPGRADE_BASETYPE
 	wound_type = "baneling" //used to match appropriate wound overlays
+	death_flick = "Baneling_Die"
 
 	// *** Melee Attacks *** //
 	melee_damage = 16
@@ -25,7 +27,7 @@
 
 	// *** Flags *** //
 	caste_flags = CASTE_DO_NOT_ALERT_LOW_LIFE|CASTE_IS_A_MINION
-	can_flags = CASTE_CAN_BE_QUEEN_HEALED
+	can_flags = NONE
 	caste_traits = null
 
 	// *** Defense *** //

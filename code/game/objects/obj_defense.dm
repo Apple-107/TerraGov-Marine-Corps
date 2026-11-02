@@ -1,3 +1,4 @@
+// TODO this should be on /atom level
 /obj/proc/take_damage(damage_amount, damage_type = BRUTE, armor_type = null, effects = TRUE, attack_dir, armour_penetration = 0, mob/living/blame_mob)
 	if(QDELETED(src))
 		CRASH("[src] taking damage after deletion")
@@ -12,9 +13,11 @@
 		damage_amount = round(modify_by_armor(damage_amount, armor_type, armour_penetration, null, attack_dir), DAMAGE_PRECISION)
 	if(damage_amount < DAMAGE_PRECISION)
 		return
+	if(SEND_SIGNAL(src, COMSIG_ATOM_TAKE_DAMAGE, damage_amount, damage_type, armor_type, effects, attack_dir, armour_penetration, blame_mob) & COMPONENT_NO_TAKE_DAMAGE)
+		return
 	. = damage_amount
 	obj_integrity = max(obj_integrity - damage_amount, 0)
-	update_icon()
+	update_appearance(UPDATE_ICON)
 
 	//BREAKING FIRST
 	if(integrity_failure && obj_integrity <= integrity_failure)
@@ -26,28 +29,31 @@
 
 ///Increase obj_integrity and record it to the repairer's stats
 /obj/proc/repair_damage(repair_amount, mob/user)
+	if(SEND_SIGNAL(src, COMSIG_ATOM_REPAIR_DAMAGE, repair_amount, user) & COMPONENT_NO_REPAIR)
+		return
 	repair_amount = min(repair_amount, max_integrity - obj_integrity)
 	if(user?.client)
 		var/datum/personal_statistics/personal_statistics = GLOB.personal_statistics_list[user.ckey]
 		personal_statistics.integrity_repaired += repair_amount
-		personal_statistics.mission_integrity_repaired += repair_amount
+		if(!is_ground_level(user.z)) //Can't trust players
+			personal_statistics.mission_integrity_repaired += repair_amount
 		personal_statistics.times_repaired++
 	obj_integrity += repair_amount
 
 ///the sound played when the obj is damaged.
 /obj/proc/play_attack_sound(damage_amount, damage_type = BRUTE, damage_flag = 0)
 	if(hit_sound)
-		playsound(loc, hit_sound, 40, 1)
+		playsound(loc, hit_sound, 40, 1, MEDIUM_SOUND_RANGE)
 		return
 
-	switch(damage_type)
-		if(BRUTE)
-			if(damage_amount)
-				playsound(loc, 'sound/weapons/smash.ogg', 25, 1)
-			else
-				playsound(loc, 'sound/weapons/tap.ogg', 25, 1)
-		if(BURN)
-			playsound(loc, 'sound/items/welder.ogg', 50, 1)
+	if(!damage_amount)
+		playsound(loc, 'sound/weapons/tap.ogg', 25, 1, SHORT_SOUND_RANGE)
+		return
+	if(damage_type == BRUTE)
+		playsound(loc, 'sound/weapons/smash.ogg', 25, 1, MEDIUM_SOUND_RANGE)
+		return
+	if(damage_type == BURN)
+		playsound(loc, 'sound/items/welder.ogg', 50, 1, MEDIUM_SOUND_RANGE)
 
 
 /obj/ex_act(severity)
@@ -92,15 +98,14 @@
 	take_damage(tforce, BRUTE, MELEE, 1, get_dir(src, AM))
 
 
-/obj/bullet_act(obj/projectile/proj)
+/obj/bullet_act(atom/movable/projectile/proj)
 	if(istype(proj.ammo, /datum/ammo/xeno) && !(resistance_flags & XENO_DAMAGEABLE))
 		return
 	. = ..()
 	if(proj.damage < 1)
 		return
-	playsound(loc, proj.hitsound, 50, 1)
 	if(proj.damage > 30)
-		visible_message(span_warning("\the [src] is damaged by \the [proj]!"), visible_message_flags = COMBAT_MESSAGE)
+		visible_message(span_warning("\The [src] is damaged by \the [proj]!"), visible_message_flags = COMBAT_MESSAGE)
 	take_damage(proj.damage, proj.ammo.damage_type, proj.ammo.armor_type, 0, REVERSE_DIR(proj.dir), proj.ammo.penetration, isliving(proj.firer) ? proj.firer : null)
 
 
@@ -129,7 +134,7 @@
 	if(xeno_attacker.status_flags & INCORPOREAL) //Ghosts can't attack machines
 		return FALSE
 	SEND_SIGNAL(xeno_attacker, COMSIG_XENOMORPH_ATTACK_OBJ, src)
-	if(SEND_SIGNAL(src, COMSIG_OBJ_ATTACK_ALIEN, xeno_attacker) & COMPONENT_NO_ATTACK_ALIEN)
+	if(SEND_SIGNAL(src, COMSIG_OBJ_ATTACK_ALIEN, xeno_attacker, damage_amount) & COMPONENT_NO_ATTACK_ALIEN)
 		return FALSE
 	if(!(resistance_flags & XENO_DAMAGEABLE))
 		to_chat(xeno_attacker, span_warning("We stare at \the [src] cluelessly."))
@@ -138,7 +143,7 @@
 		xeno_attacker.visible_message(span_danger("[xeno_attacker] has slashed [src]!"),
 		span_danger("We slash [src]!"))
 		xeno_attacker.do_attack_animation(src, ATTACK_EFFECT_CLAW)
-		playsound(loc, SFX_ALIEN_CLAW_METAL, 25)
+		playsound(loc, SFX_ALIEN_CLAW_METAL, 25, FALSE, MEDIUM_SOUND_RANGE)
 	attack_generic(xeno_attacker, damage_amount, damage_type, armor_type, effects, armor_penetration)
 	return TRUE
 

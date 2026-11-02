@@ -26,8 +26,8 @@
 /obj/machinery/door/window/Initialize(mapload, set_dir)
 	. = ..()
 	if(dir == NORTH)
-		add_overlay(image(icon, "rwindow_overlay", layer = WINDOW_LAYER))
-		layer = ABOVE_TABLE_LAYER
+		add_overlay(image(icon, "rwindow_overlay", layer = ABOVE_WINDOW_LAYER))
+		layer = GIB_LAYER
 	if(set_dir)
 		setDir(set_dir)
 	if(length(req_access))
@@ -77,8 +77,9 @@
 	add_fingerprint(user, "bumpopen")
 	if(!requiresID())
 		user = null
-
-	if(allowed(user))
+	if(elevator_mode && elevator_status == LIFT_PLATFORM_UNLOCKED)
+		open()
+	else if(allowed(user))
 		open_and_close()
 	else
 		do_animate("deny")
@@ -94,7 +95,7 @@
 		operating = TRUE
 	icon_state = "[base_state]open"
 	do_animate("opening")
-	playsound(src, 'sound/machines/windowdoor.ogg', 25, 1)
+	playsound(src, 'sound/machines/windowdoor.ogg', 25, 1, MEDIUM_SOUND_RANGE)
 	addtimer(CALLBACK(src, PROC_REF(finish_open)), 1 SECONDS)
 	return TRUE
 
@@ -116,7 +117,7 @@
 	operating = TRUE
 	icon_state = base_state
 	do_animate("closing")
-	playsound(src, 'sound/machines/windowdoor.ogg', 25, 1)
+	playsound(src, 'sound/machines/windowdoor.ogg', 25, 1, MEDIUM_SOUND_RANGE)
 
 	density = TRUE
 
@@ -140,10 +141,9 @@
 		return TRUE
 
 	else if(operating == -1 && iscrowbar(I))
-		playsound(loc, 'sound/items/crowbar.ogg', 25, 1)
 		user.visible_message("[user] starts to remove the electronics from the windoor.", "You start to remove electronics from the windoor.")
 
-		if(!do_after(user, 40, NONE, src, BUSY_ICON_BUILD))
+		if(!I.use_tool(src, user, 4 SECONDS, user_display = BUSY_ICON_BUILD))
 			return TRUE
 
 		to_chat(user, span_notice("You removed the windoor electronics!"))

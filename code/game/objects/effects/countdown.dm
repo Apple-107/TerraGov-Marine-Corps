@@ -7,9 +7,9 @@
 
 	invisibility = INVISIBILITY_OBSERVER
 	anchored = TRUE
-	layer = GHOST_LAYER
+	plane = ABOVE_GAME_PLANE
 	color = "#ff0000" // text color
-	var/text_size = 3 // larger values clip when the displayed text is larger than 2 digits.
+	var/text_size = 2 // larger values clip when the displayed text is larger than 2 digits.
 	var/started = FALSE
 	var/displayed_text
 	var/atom/attached_to
@@ -57,7 +57,7 @@
 
 /obj/effect/countdown/Destroy()
 	attached_to = null
-	STOP_PROCESSING(SSobj, src)
+	STOP_PROCESSING(SSprocessing, src)
 	return ..()
 
 /obj/effect/countdown/ex_act(severity) //immune to explosions
@@ -94,8 +94,7 @@
 	color = "#d1d1d1"
 	invisibility = SEE_INVISIBLE_LIVING
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
-	layer = ABOVE_HUD_LAYER
-	plane = HUD_PLANE
+	plane = ABOVE_HUD_PLANE
 	pixel_x = 5
 	pixel_y = 8
 	appearance_flags = KEEP_APART|RESET_COLOR
@@ -104,6 +103,7 @@
 
 /obj/effect/countdown/action_cooldown/Destroy()
 	attached_action = null
+	STOP_PROCESSING(SSfastprocess, src)
 	return ..()
 
 /obj/effect/countdown/action_cooldown/attach(atom/A)
@@ -119,6 +119,13 @@
 	if(!started)
 		START_PROCESSING(SSfastprocess, src)
 		started = TRUE
+
+/obj/effect/countdown/action_cooldown/stop()
+	if(started)
+		maptext = null
+		displayed_text = null
+		STOP_PROCESSING(SSfastprocess, src)
+		started = FALSE
 
 /obj/effect/countdown/action_cooldown/process()
 	if(QDELETED(attached_to))

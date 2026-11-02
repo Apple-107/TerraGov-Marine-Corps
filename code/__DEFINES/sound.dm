@@ -7,21 +7,43 @@
 #define CHANNEL_ADMIN 1018
 #define CHANNEL_MIDI 1017
 #define CHANNEL_AMBIENCE 1016
+#define CHANNEL_ELEVATOR 1015
 
 //THIS SHOULD ALWAYS BE THE LOWEST ONE!
 //KEEP IT UPDATED
-
-#define CHANNEL_HIGHEST_AVAILABLE 1015
+#define CHANNEL_HIGHEST_AVAILABLE 1014
 
 #define MAX_INSTRUMENT_CHANNELS (128 * 6)
 
-///Default range of a sound.
-#define SOUND_RANGE 17
-#define MEDIUM_RANGE_SOUND_EXTRARANGE -5
-///default extra range for sounds considered to be quieter
-#define SHORT_RANGE_SOUND_EXTRARANGE -9
-///The range deducted from sound range for things that are considered silent / sneaky
-#define SILENCED_SOUND_EXTRARANGE -11
+/// This is the lowest volume that can be used by playsound otherwise it gets ignored
+/// Most sounds around 10 volume can barely be heard. Almost all sounds at 5 volume or below are inaudible
+/// This is to prevent sound being spammed at really low volumes due to distance calculations
+/// Recommend setting this to anywhere from 10-3 (or 0 to disable any sound minimum volume restrictions)
+/// Ex. For a 70 volume sound, 17 tile range, 3 exponent, 2 falloff_distance:
+/// Setting SOUND_AUDIBLE_VOLUME_MIN to 0 for the above will result in 17x17 radius (289 turfs)
+/// Setting SOUND_AUDIBLE_VOLUME_MIN to 5 for the above will result in 14x14 radius (196 turfs)
+/// Setting SOUND_AUDIBLE_VOLUME_MIN to 10 for the above will result in 11x11 radius (121 turfs)
+#define SOUND_AUDIBLE_VOLUME_MIN 3
+
+///Extremely loud sounds
+#define VERY_LOUD_SOUND_RANGE 36
+///Loud sounds
+#define LOUD_SOUND_RANGE 24
+///Sound range of gunfire
+#define FIREARM_SOUND_RANGE 24
+///Default range of a sound
+#define DEFAULT_SOUND_RANGE 17
+///Moderate sound range
+#define MEDIUM_SOUND_RANGE 12
+///Nominal screen range sounds
+#define SHORT_SOUND_RANGE 8
+///Low sound range
+#define SUPER_SHORT_SOUND_RANGE 5
+///Very quiet/stealthy sounds
+#define SUPPRESSED_SOUND_RANGE 3
+///Adjacent only range
+#define ADJACENT_SOUND_RANGE 1
+
 ///Percentage of sound's range where no falloff is applied
 #define SOUND_DEFAULT_FALLOFF_DISTANCE 1 //For a normal sound this would be 1 tile of no falloff
 ///The default exponent of sound falloff
@@ -96,6 +118,7 @@
 #define SFX_ALLOY_BOUNCE "alloy_bounce"
 #define SFX_GUN_SILENCED "gun_silenced"
 #define SFX_GUN_SMARTGUN "gun_smartgun"
+#define SFX_GUN_SMARTGPMG "gun_smartgun_gpmg"
 #define SFX_GUN_FLAMETHROWER "gun_flamethrower"
 #define SFX_GUN_AR12 "gun_ar12"
 #define SFX_GUN_FB12 "gun_fb12"
@@ -128,9 +151,9 @@
 #define SFX_ALIEN_ROAR_LARVA "alien_roar_larva"
 #define SFX_QUEEN "queen"
 #define SFX_ALIEN_VENTPASS "alien_ventpass"
-#define SFX_BEHEMOTH_STEP_SOUNDS "behemoth_step_sounds"
-#define SFX_BEHEMOTH_ROLLING "behemoth_rolling"
 #define SFX_BEHEMOTH_EARTH_PILLAR_HIT "behemoth_earth_pillar_hit"
+#define SFX_CONQUEROR_WILL_HOOK "conqueror_will_hook"
+#define SFX_CONQUEROR_WILL_EXTRA "conqueror_will_extra"
 #define SFX_MALE_SCREAM "male_scream"
 #define SFX_MALE_PAIN "male_pain"
 #define SFX_MALE_GORED "male_gored"
@@ -153,4 +176,3 @@
 #define SFX_ROBOT_SCREAM "robot_scream"
 #define SFX_ROBOT_PAIN "robot_pain"
 #define SFX_ROBOT_WARCRY "robot_warcry"
-#define SFX_HOVER_TANK "hover_tank"

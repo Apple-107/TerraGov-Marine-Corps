@@ -30,12 +30,12 @@
 	if(QDELETED(clicked_atom))
 		return
 
-	var/turf/turf_to_check = get_step(source, angle_to_dir(Get_Angle(source, clicked_atom)))
+	var/turf/turf_to_check = get_step(source, angle2dir(Get_Angle(source, clicked_atom)))
 	if(!turf_to_check || !source.Adjacent(turf_to_check))
 		return
 
 	var/mob/living/target_mob = locate() in turf_to_check
-	if(!target_mob || source.faction == target_mob.faction)
+	if(!target_mob || source.faction == target_mob.faction || target_mob.stat == DEAD)
 		return
 
 	//This is here to undo the +1 the click on the distant turf adds so we can click the mob near us

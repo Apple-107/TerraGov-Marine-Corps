@@ -8,7 +8,6 @@
 
 	maxHealth = 35
 	health = 35
-	see_in_dark = 8
 	allow_pass_flags = PASS_MOB|PASS_XENO
 	pass_flags = PASS_LOW_STRUCTURE|PASS_MOB|PASS_XENO
 	tier = XENO_TIER_ZERO  //Larva's don't count towards Pop limits
@@ -50,7 +49,7 @@
 		if(100 to INFINITY)
 			progress = "Mature "
 
-	name = "[hive.prefix][progress]Larva ([nicknumber])"
+	name = "[hive.prefix ? "[hive.prefix] " : ""][progress]Larva ([nicknumber])"
 
 	//Update linked data so they show up properly
 	real_name = name

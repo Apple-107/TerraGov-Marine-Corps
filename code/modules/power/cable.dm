@@ -399,7 +399,7 @@ GLOBAL_LIST_INIT(cable_coil_recipes, list(new/datum/stack_recipe("cable restrain
 	throw_range = 5
 	atom_flags = CONDUCT
 	equip_slot_flags = ITEM_SLOT_BELT
-	attack_verb = list("whipped", "lashed", "disciplined", "flogged")
+	attack_verb = list("whips", "lashes", "disciplines", "flogs")
 	singular_name = "cable piece"
 	usesound = 'sound/items/deconstruct.ogg'
 	var/obj/structure/cable/target_type = /obj/structure/cable
@@ -468,7 +468,8 @@ GLOBAL_LIST(cable_radial_layer_list)
 			target_layer = CABLE_LAYER_2
 		if("Multi Z layer cable hub")
 			name = "multi z layer cable hub"
-			icon_state = "cablerelay-broken-cable"
+			icon = 'icons/obj/stationobjs.dmi'
+			icon_state = "gsensor1"
 			color = COLOR_VERY_LIGHT_GRAY
 			target_type = /obj/structure/cable/multilayer/multiz
 			target_layer = CABLE_LAYER_2

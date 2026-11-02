@@ -9,6 +9,7 @@
 	coverage = 10
 	atom_flags = CONDUCT
 	allow_pass_flags = PASS_AIR|PASS_PROJECTILE|PASS_GRILLE
+	obj_flags = parent_type::obj_flags|BLOCK_Z_OUT_DOWN|BLOCK_Z_IN_UP
 	layer = OBJ_LAYER
 	resistance_flags = XENO_DAMAGEABLE
 	soft_armor = list(MELEE = 50, BULLET = 70, LASER = 70, ENERGY = 100, BOMB = 10, BIO = 100, FIRE = 0, ACID = 0)
@@ -60,7 +61,7 @@
 	. = ..()
 	if(.)
 		return
-	playsound(loc, 'sound/effects/grillehit.ogg', 25, 1)
+	playsound(loc, 'sound/effects/grillehit.ogg', 25, 1, MEDIUM_SOUND_RANGE)
 
 	user.visible_message(span_warning("[user] kicks [src]."), \
 						span_warning("You kick [src]."), \
@@ -72,12 +73,12 @@
 		return
 
 	if(iswirecutter(I))
-		playsound(loc, 'sound/items/wirecutter.ogg', 25, 1)
+		I.play_tool_sound(src)
 		new /obj/item/stack/rods(loc, 2)
 		qdel(src)
 
 	else if(isscrewdriver(I) && isopenturf(loc))
-		playsound(loc, 'sound/items/screwdriver.ogg', 25, 1)
+		I.play_tool_sound(src)
 		anchored = !anchored
 		user.visible_message(span_notice("[user] [anchored ? "fastens" : "unfastens"] the grille."), \
 							span_notice("You have [anchored ? "fastened the grille to" : "unfastened the grill from"] the floor."))

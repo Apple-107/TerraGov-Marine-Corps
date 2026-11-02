@@ -9,10 +9,9 @@
 	density = TRUE
 	anchored = TRUE
 	layer = TABLE_LAYER
-	obj_flags = CAN_BE_HIT | IGNORE_DENSITY
-	climbable = TRUE
 	resistance_flags = XENO_DAMAGEABLE
 	allow_pass_flags = PASS_LOW_STRUCTURE|PASSABLE|PASS_WALKOVER
+	obj_flags = parent_type::obj_flags|BLOCK_Z_OUT_DOWN|BLOCK_Z_IN_UP
 	hit_sound = 'sound/effects/metalhit.ogg'
 	coverage = 10
 	smoothing_flags = SMOOTH_BITMASK
@@ -47,6 +46,7 @@
 		COMSIG_TURF_CHECK_COVERED = TYPE_PROC_REF(/atom/movable, turf_cover_check),
 	)
 	AddElement(/datum/element/connect_loc, connections)
+	AddComponent(/datum/component/climbable)
 
 /obj/structure/table/Destroy()
 	update_adjacent(loc) //so neighbouring tables get updated correctly
@@ -101,7 +101,7 @@
 	if(I.loc != loc)
 		step(I, get_dir(I, src))
 
-/obj/structure/table/wrench_act(mob/living/user, obj/item/I)
+/obj/structure/table/wrench_act(mob/user, obj/item/tool)
 	. = ..()
 	if(reinforced && table_status != TABLE_STATUS_WEAKENED)
 		return FALSE
@@ -109,8 +109,7 @@
 	user.visible_message(span_notice("[user] starts disassembling [src]."),
 		span_notice("You start disassembling [src]."))
 
-	playsound(loc, 'sound/items/ratchet.ogg', 25, TRUE)
-	if(!do_after(user, 5 SECONDS, NONE, src, BUSY_ICON_BUILD))
+	if(!tool.use_tool(src, user, 5 SECONDS, user_display = BUSY_ICON_BUILD))
 		return TRUE
 
 	user.visible_message(span_notice("[user] disassembles [src]."),
@@ -138,7 +137,7 @@
 /obj/structure/table/grab_interact(obj/item/grab/grab, mob/user, base_damage = BASE_OBJ_SLAM_DAMAGE, is_sharp = FALSE)
 	. = ..()
 	if(.)
-		playsound(loc, 'sound/weapons/tablehit1.ogg', 25, 1)
+		playsound(loc, 'sound/weapons/tablehit1.ogg', 25, 1, MEDIUM_SOUND_RANGE)
 		return
 	if(user.a_intent == INTENT_HARM)
 		return
@@ -191,7 +190,7 @@
 /obj/structure/table/verb/do_flip()
 	set name = "Flip table"
 	set desc = "Flips a non-reinforced table"
-	set category = "Object"
+	set category = "IC.Object"
 	set src in oview(1)
 
 	if(!can_interact(usr))
@@ -204,8 +203,7 @@
 	usr.visible_message(span_warning("[usr] flips [src]!"),
 	span_warning("You flip [src]!"))
 
-	if(climbable)
-		structure_shaken()
+	structure_shaken()
 
 	flip_cooldown = world.time + 50
 
@@ -236,7 +234,7 @@
 /obj/structure/table/proc/do_put()
 	set name = "Put table back"
 	set desc = "Puts flipped table back"
-	set category = "Object"
+	set category = "IC.Object"
 	set src in oview(1)
 
 	if(!can_interact(usr))
@@ -274,6 +272,7 @@
 	if(dir != NORTH)
 		layer = FLY_LAYER
 	flipped = TRUE
+	obj_flags ^= BLOCK_Z_OUT_DOWN|BLOCK_Z_IN_UP
 	coverage = 60
 	atom_flags |= ON_BORDER
 	for(var/D in list(turn(direction, 90), turn(direction, -90)))
@@ -294,8 +293,8 @@
 	layer = initial(layer)
 	flipped = FALSE
 	coverage = 10
-	climbable = initial(climbable)
 	atom_flags &= ~ON_BORDER
+	obj_flags ^= BLOCK_Z_OUT_DOWN|BLOCK_Z_IN_UP
 	for(var/D in list(turn(dir, 90), turn(dir, -90)))
 		var/obj/structure/table/T = locate() in get_step(src.loc,D)
 		if(T?.flipped && T.dir == src.dir)
@@ -336,14 +335,14 @@
 	parts = /obj/item/frame/table/wood
 	base_icon_state = "wood_table_reinforced"
 	table_prefix = "wood"
-	hit_sound = 'sound/effects/woodhit.ogg'
+	hit_sound = 'sound/effects/natural/woodhit.ogg'
 	max_integrity = 20
 
 /obj/structure/table/wood/add_debris_element()
 	AddElement(/datum/element/debris, DEBRIS_WOOD, -40, 5)
 
 /obj/structure/table/wood/footstep_override(atom/movable/source, list/footstep_overrides)
-	footstep_overrides[FOOTSTEP_WOOD] = layer
+	footstep_overrides[FOOTSTEP_WOOD] = get_footstep_layer(layer, plane)
 
 /obj/structure/table/wood/fancy
 	name = "fancy wooden table"
@@ -372,7 +371,7 @@
 	sheet_type = /obj/item/stack/sheet/wood
 	parts = /obj/item/frame/table/gambling
 	table_prefix = "gamble"
-	hit_sound = 'sound/effects/woodhit.ogg'
+	hit_sound = 'sound/effects/natural/woodhit.ogg'
 	max_integrity = 20
 
 /obj/structure/table/wood/gambling/urban
@@ -449,38 +448,30 @@
 	return ..()
 
 
-/obj/structure/table/reinforced/welder_act(mob/living/user, obj/item/I)
+/obj/structure/table/reinforced/welder_act(mob/user, obj/item/tool)
 	. = ..()
-	var/obj/item/tool/weldingtool/WT = I
+	var/obj/item/tool/weldingtool/WT = tool
 	if(!WT.isOn())
 		return FALSE
 
 	if(table_status == TABLE_STATUS_FIRM)
 		user.visible_message(span_notice("[user] starts weakening [src]."),
 		span_notice("You start weakening [src]"))
-		add_overlay(GLOB.welding_sparks)
-		playsound(loc, 'sound/items/welder.ogg', 25, TRUE)
-		if(!do_after(user, 5 SECONDS, NONE, src, BUSY_ICON_BUILD, extra_checks = CALLBACK(WT, TYPE_PROC_REF(/obj/item/tool/weldingtool, isOn))) || !WT.remove_fuel(1, user))
-			cut_overlay(GLOB.welding_sparks)
-			return TRUE
+		if(!tool.use_tool(src, user, 5 SECONDS, 0, 25, null, BUSY_ICON_BUILD))
+			return
 
 		user.visible_message(span_notice("[user] weakens [src]."),
 			span_notice("You weaken [src]"))
-		cut_overlay(GLOB.welding_sparks)
 		table_status = TABLE_STATUS_WEAKENED
 		return TRUE
 
 	user.visible_message(span_notice("[user] starts welding [src] back together."),
 		span_notice("You start welding [src] back together."))
-	add_overlay(GLOB.welding_sparks)
-	playsound(loc, 'sound/items/welder.ogg', 25, TRUE)
-	if(!do_after(user, 5 SECONDS, NONE, src, BUSY_ICON_BUILD, extra_checks = CALLBACK(WT, TYPE_PROC_REF(/obj/item/tool/weldingtool, isOn))) || !WT.remove_fuel(1, user))
-		cut_overlay(GLOB.welding_sparks)
-		return TRUE
+	if(!tool.use_tool(src, user, 5 SECONDS, 0, 25, null, BUSY_ICON_BUILD))
+		return
 
 	user.visible_message(span_notice("[user] welds [src] back together."),
 		span_notice("You weld [src] back together."))
-	cut_overlay(GLOB.welding_sparks)
 	table_status = TABLE_STATUS_FIRM
 	return TRUE
 
@@ -529,11 +520,10 @@
 	layer = TABLE_LAYER
 	anchored = TRUE
 	coverage = 20
-	climbable = TRUE
 	var/dropmetal = TRUE   //if true drop metal when destroyed; mostly used when we need large amounts of racks without marines hoarding the metal
 	max_integrity = 40
 	resistance_flags = XENO_DAMAGEABLE
-	allow_pass_flags = PASS_LOW_STRUCTURE|PASSABLE
+	allow_pass_flags = PASS_LOW_STRUCTURE|PASSABLE|PASS_WALKOVER
 	var/parts = /obj/item/frame/rack
 
 /obj/structure/rack/Initialize(mapload)
@@ -545,6 +535,7 @@
 		COMSIG_TURF_CHECK_COVERED = TYPE_PROC_REF(/atom/movable, turf_cover_check),
 	)
 	AddElement(/datum/element/connect_loc, connections)
+	AddComponent(/datum/component/climbable)
 
 /obj/structure/rack/MouseDrop_T(obj/item/I, mob/user)
 	if (!istype(I) || user.get_active_held_item() != I)
@@ -560,7 +551,7 @@
 
 	if(iswrench(I))
 		deconstruct(TRUE)
-		playsound(loc, 'sound/items/ratchet.ogg', 25, 1)
+		I.play_tool_sound(src)
 		return
 
 	if(user.a_intent != INTENT_HARM)
@@ -591,7 +582,7 @@
 	icon = 'icons/obj/metnal_objects.dmi'
 	icon_state = "lectern"
 	dropmetal = FALSE
-	hit_sound = 'sound/effects/woodhit.ogg'
+	hit_sound = 'sound/effects/natural/woodhit.ogg'
 
 /obj/structure/rack/wood
 	color = "#8B7B5B"

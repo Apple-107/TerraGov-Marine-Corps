@@ -2,7 +2,7 @@
 	var/job = speaker.GetJob()
 	var/namepart = "[speaker.GetVoice()][speaker.get_alt_name()]"
 
-	return radio_freq ? "\[[get_radio_name(radio_freq)][job ? " <a href='?src=[REF(src)];track=[html_encode(namepart)]'>([job])</a>": ""]\] " : ""
+	return radio_freq ? "\[[get_radio_name(radio_freq)][job ? " <a href='byond://?src=[REF(src)];track=[html_encode(namepart)]'>([job])</a>": ""]\] " : ""
 
 /mob/living/silicon/ai/radio(message, message_mode, list/spans, language)
 	if(incapacitated())
@@ -61,12 +61,11 @@
 	<LI>Use Ctrl+F to see if a word exists in the list.</LI></UL><HR>
 	"}
 
-	var/index = 0
+	var/our_ref = REF(src)
+	var/list/word_links = list()
 	for(var/word in GLOB.vox_sounds) //populate our list of available words for the user to see
-		index++
-		dat += "<A href='?src=[REF(src)];say_word=[word]'>[capitalize(word)]</A>"
-		if(index != length(GLOB.vox_sounds))
-			dat += " / "
+		word_links += "<A href='byond://?src=[our_ref];say_word=[word]'>[capitalize(word)]</A>"
+	dat += jointext(word_links, " / ")
 
 	var/datum/browser/popup = new(src, "announce_help", "Announcement Help", 500, 400)
 	popup.set_content(dat)

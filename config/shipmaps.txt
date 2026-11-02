@@ -29,8 +29,15 @@ endmap
 map arachne
 endmap
 
+map legacy_of_spring
+endmap
+
 map combat_patrol_base
 endmap
 
 map iteron
 endmap
+
+map multiz_debug
+endmap
+

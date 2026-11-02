@@ -171,7 +171,7 @@
 		return
 	set_light_on(toggle_on)
 	armor_features_flags ^= ARMOR_LAMP_ON
-	playsound(src, 'sound/items/flashlight.ogg', 15, TRUE)
+	playsound(src, 'sound/items/flashlight.ogg', 15, TRUE, SHORT_SOUND_RANGE)
 	update_icon()
 
 /obj/item/clothing/suit/update_clothing_icon()
@@ -199,7 +199,7 @@
 	blood_sprite_state = "bloodyhands"
 	armor_protection_flags = HANDS
 	equip_slot_flags = ITEM_SLOT_GLOVES
-	attack_verb = list("challenged")
+	attack_verb = list("challenges")
 
 
 /obj/item/clothing/gloves/update_greyscale(list/colors, update)
@@ -230,8 +230,8 @@
 			update_icon()
 			return
 
-		playsound(loc, 'sound/items/wirecutter.ogg', 25, 1)
-		user.visible_message(span_warning(" [user] cuts the fingertips off of the [src]."),span_warning(" You cut the fingertips off of the [src]."))
+		I.play_tool_sound(src)
+		user.visible_message(span_warning("[user] cuts the fingertips off of the [src]."),span_warning("You cut the fingertips off of the [src]."))
 
 		clipped = TRUE
 		name = "mangled [name]"

@@ -151,12 +151,12 @@
 	[beaker_contents]<hr>
 	"}
 		if(is_beaker_ready && !is_chamber_empty && !(machine_stat & (NOPOWER|BROKEN)))
-			dat += "<A href='?src=[text_ref(src)];action=grind'>Grind the reagents</a><BR>"
-			dat += "<A href='?src=[text_ref(src)];action=juice'>Juice the reagents</a><BR><BR>"
+			dat += "<A href='byond://?src=[text_ref(src)];action=grind'>Grind the reagents</a><BR>"
+			dat += "<A href='byond://?src=[text_ref(src)];action=juice'>Juice the reagents</a><BR><BR>"
 		if(length(holdingitems) > 0)
-			dat += "<A href='?src=[text_ref(src)];action=eject'>Eject the reagents</a><BR>"
+			dat += "<A href='byond://?src=[text_ref(src)];action=eject'>Eject the reagents</a><BR>"
 		if(beaker)
-			dat += "<A href='?src=[text_ref(src)];action=detach'>Detach the beaker</a><BR>"
+			dat += "<A href='byond://?src=[text_ref(src)];action=detach'>Detach the beaker</a><BR>"
 	else
 		dat += "Please wait..."
 
@@ -220,7 +220,7 @@
 		if(!juicing)
 			playsound(src, 'sound/machines/blender.ogg', 50, TRUE)
 		else
-			playsound(src, 'sound/machines/juicer.ogg', 20, TRUE)
+			playsound(src, 'sound/machines/juicer.ogg', 20, TRUE, MEDIUM_SOUND_RANGE)
 	addtimer(VARSET_CALLBACK(src, operating, FALSE), time / speed)
 
 /obj/machinery/reagentgrinder/proc/is_allowed(obj/item/reagent_containers/O)

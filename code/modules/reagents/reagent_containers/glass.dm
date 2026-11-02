@@ -30,7 +30,7 @@
 
 /obj/item/reagent_containers/glass/verb/attach_lid()
 	set name = "Attach/Detach lid"
-	set category = "Object"
+	set category = "IC.Object"
 	if(is_open_container())
 		to_chat(usr, span_notice("You put the lid on \the [src]."))
 		DISABLE_BITFIELD(reagents.reagent_flags, OPENCONTAINER)
@@ -242,7 +242,7 @@
 
 		reagents.trans_to(I, 5)
 		to_chat(user, span_notice("You wet [I] in [src]."))
-		playsound(loc, 'sound/effects/slosh.ogg', 25, 1)
+		playsound(loc, 'sound/effects/slosh.ogg', 25, 1, MEDIUM_SOUND_RANGE)
 
 /obj/item/reagent_containers/glass/bucket/update_overlays()
 	. = ..()

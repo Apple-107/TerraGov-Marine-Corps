@@ -16,7 +16,11 @@
 
 
 /datum/browser/New(nuser, nwindow_id, ntitle = 0, nwidth = 0, nheight = 0, atom/nref = null)
-	user = nuser
+	if(IS_CLIENT_OR_MOCK(nuser))
+		var/client/client_user = nuser
+		user = client_user.mob
+	else
+		user = nuser
 	RegisterSignal(user, COMSIG_QDELETING, PROC_REF(clean_browser))
 	window_id = nwindow_id
 	if(ntitle)
@@ -35,6 +39,7 @@
 
 /datum/browser/Destroy(force, ...)
 	user = null
+	ref = null
 	return ..()
 
 /datum/browser/proc/add_head_content(nhead_content)
@@ -73,6 +78,15 @@
 	head_content += "<link rel='stylesheet' type='text/css' href='[common_asset.get_url_mappings()["common.css"]]'>"
 	for(file in stylesheets)
 		head_content += "<link rel='stylesheet' type='text/css' href='[SSassets.transport.get_asset_url(file)]'>"
+
+	if(user.client?.window_scaling && user.client?.window_scaling != 1 && !user.client?.prefs.ui_scale && width && height)
+		head_content += {"
+			<style>
+				body {
+					zoom: [100 / user.client?.window_scaling]%;
+				}
+			</style>
+			"}
 
 	for (file in scripts)
 		head_content += "<script type='text/javascript' src='[SSassets.transport.get_asset_url(file)]'></script>"
@@ -115,13 +129,17 @@
 		return
 	var/window_size = ""
 	if(width && height)
-		window_size = "size=[width]x[height];"
+		if(user.client?.prefs?.ui_scale)
+			var/scaling = user.client.window_scaling
+			window_size = "size=[width * scaling]x[height * scaling];"
+		else
+			window_size = "size=[width]x[height];"
 	common_asset.send(user)
 	if(length(stylesheets))
 		SSassets.transport.send_assets(user, stylesheets)
 	if(length(scripts))
 		SSassets.transport.send_assets(user, scripts)
-	user << browse(get_content(), "window=[window_id];[window_size][window_options]")
+	DIRECT_OUTPUT(user, browse(get_content(), "window=[window_id];[window_size][window_options]"))
 	if(use_onclose)
 		setup_onclose()
 
@@ -149,13 +167,13 @@
 
 	var/output = {"<center><b>[Message]</b></center><br />
 		<div style="text-align:center">
-		<a style="font-size:large;float:[( Button2 ? "left" : "right" )]" href="?src=[REF(src)];button=1">[Button1]</a>"}
+		<a style="font-size:large;float:[( Button2 ? "left" : "right" )]" href="byond://?src=[REF(src)];button=1">[Button1]</a>"}
 
 	if(Button2)
-		output += {"<a style="font-size:large;[( Button3 ? "" : "float:right" )]" href="?src=[REF(src)];button=2">[Button2]</a>"}
+		output += {"<a style="font-size:large;[( Button3 ? "" : "float:right" )]" href="byond://?src=[REF(src)];button=2">[Button2]</a>"}
 
 	if(Button3)
-		output += {"<a style="font-size:large;float:right" href="?src=[REF(src)];button=3">[Button3]</a>"}
+		output += {"<a style="font-size:large;float:right" href="byond://?src=[REF(src)];button=3">[Button3]</a>"}
 
 	output += {"</div>"}
 
@@ -209,7 +227,11 @@
 	var/datum/browser/modal/alert/A = new(User, Message, Title, Button1, Button2, Button3, StealFocus, Timeout)
 	A.open()
 	A.wait()
-	switch(A.selectedbutton)
+	if(QDELETED(A))
+		return
+	var/selected = A.selectedbutton
+	qdel(A)
+	switch(selected)
 		if(1)
 			return Button1
 		if(2)
@@ -261,7 +283,7 @@
 
 
 /datum/browser/modal/proc/wait()
-	while (opentime && selectedbutton <= 0 && (!timeout || opentime+timeout > world.time))
+	while (!QDELETED(src) && opentime && selectedbutton <= 0 && (!timeout || opentime+timeout > world.time))
 		stoplag(1)
 
 
@@ -386,11 +408,11 @@
 		var/setting = settings["mainsettings"][name]
 		if(setting["type"] == "datum")
 			if(setting["subtypesonly"])
-				dat += "<b>[setting["desc"]]:</b> <a href='?src=[REF(src)];setting=[name];task=input;subtypesonly=1;type=datum;path=[setting["path"]]'>[setting["value"]]</a><BR>"
+				dat += "<b>[setting["desc"]]:</b> <a href='byond://?src=[REF(src)];setting=[name];task=input;subtypesonly=1;type=datum;path=[setting["path"]]'>[setting["value"]]</a><BR>"
 			else
-				dat += "<b>[setting["desc"]]:</b> <a href='?src=[REF(src)];setting=[name];task=input;type=datum;path=[setting["path"]]'>[setting["value"]]</a><BR>"
+				dat += "<b>[setting["desc"]]:</b> <a href='byond://?src=[REF(src)];setting=[name];task=input;type=datum;path=[setting["path"]]'>[setting["value"]]</a><BR>"
 		else
-			dat += "<b>[setting["desc"]]:</b> <a href='?src=[REF(src)];setting=[name];task=input;type=[setting["type"]]'>[setting["value"]]</a><BR>"
+			dat += "<b>[setting["desc"]]:</b> <a href='byond://?src=[REF(src)];setting=[name];task=input;type=[setting["type"]]'>[setting["value"]]</a><BR>"
 
 	if(preview_icon)
 		dat += "<td valign='center'>"
@@ -401,7 +423,7 @@
 
 	dat += "</tr></table>"
 
-	dat += "<hr><center><a href='?src=[REF(src)];button=1'>Ok</a> "
+	dat += "<hr><center><a href='byond://?src=[REF(src)];button=1'>Ok</a> "
 
 	dat += "</center>"
 

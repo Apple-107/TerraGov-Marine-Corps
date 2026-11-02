@@ -32,15 +32,15 @@
 	dat +="<table style='text-align:justify'><tr>"
 	dat += "<tr></table>"
 	dat += "<center><a href='byond://?src=[text_ref(src)];allitems=TRUE'>Dispense All</a></center><br/>"
-	dat += "<a href='?src=[text_ref(src)];operation=gun'>Guns</a><br>"
-	dat += "<a href='?src=[text_ref(src)];operation=ammo'>Ammo</a><br>"
-	dat += "<a href='?src=[text_ref(src)];operation=explosive'>Explosives</a><br>"
-	dat += "<a href='?src=[text_ref(src)];operation=melee'>Melee</a><br>"
-	dat += "<a href='?src=[text_ref(src)];operation=clothing'>Clothing</a><br>"
-	dat += "<a href='?src=[text_ref(src)];operation=food'>Food</a><br>"
-	dat += "<a href='?src=[text_ref(src)];operation=drug'>Drugs</a><br>"
-	dat += "<a href='?src=[text_ref(src)];operation=container'>Containers</a><br>"
-	dat += "<a href='?src=[text_ref(src)];operation=other'>Other</a><br>"
+	dat += "<a href='byond://?src=[text_ref(src)];operation=gun'>Guns</a><br>"
+	dat += "<a href='byond://?src=[text_ref(src)];operation=ammo'>Ammo</a><br>"
+	dat += "<a href='byond://?src=[text_ref(src)];operation=explosive'>Explosives</a><br>"
+	dat += "<a href='byond://?src=[text_ref(src)];operation=melee'>Melee</a><br>"
+	dat += "<a href='byond://?src=[text_ref(src)];operation=clothing'>Clothing</a><br>"
+	dat += "<a href='byond://?src=[text_ref(src)];operation=food'>Food</a><br>"
+	dat += "<a href='byond://?src=[text_ref(src)];operation=drug'>Drugs</a><br>"
+	dat += "<a href='byond://?src=[text_ref(src)];operation=container'>Containers</a><br>"
+	dat += "<a href='byond://?src=[text_ref(src)];operation=other'>Other</a><br>"
 	dat += "<hr/>"
 
 	switch(state)
@@ -236,7 +236,7 @@
 	desc = "A bewildering tangle of machinery and pipes linking the hypersleep chambers to the hypersleep bay.."
 	icon = 'icons/obj/machines/cryogenics.dmi'
 	icon_state = "cryo_rear"
-	layer = UNDERFLOOR_OBJ_LAYER
+	layer = LOW_OBJ_LAYER
 	plane = FLOOR_PLANE
 	anchored = TRUE
 
@@ -302,7 +302,7 @@
 		return
 	if(!occupant)
 		return
-	. += emissive_appearance(icon, "[icon_state]_emissive", alpha = src.alpha)
+	. += emissive_appearance(icon, "[icon_state]_emissive", src, alpha = src.alpha)
 	. += mutable_appearance(icon, "[icon_state]_emissive", alpha = src.alpha)
 
 /obj/machinery/cryopod/proc/shuttle_crush()
@@ -404,7 +404,7 @@
 
 /obj/machinery/cryopod/verb/eject()
 	set name = "Eject Pod"
-	set category = "Object"
+	set category = "IC.Object"
 	set src in view(0)
 
 	if(usr.incapacitated(TRUE) || usr.loc != src)
@@ -433,7 +433,7 @@
 
 /obj/machinery/cryopod/verb/move_inside()
 	set name = "Enter Pod"
-	set category = "Object"
+	set category = "IC.Object"
 	set src in oview(1)
 
 	move_inside_wrapper(usr, usr)
@@ -484,10 +484,10 @@
 	if(xeno_attacker.status_flags & INCORPOREAL || xeno_attacker.do_actions)
 		return
 	visible_message(span_warning("[xeno_attacker] begins to pry the [src]'s cover!"), 3)
-	playsound(src,'sound/effects/metal_creaking.ogg', 25, 1)
+	playsound(src,'sound/effects/metal_creaking.ogg', 25, 1, MEDIUM_SOUND_RANGE)
 	if(!do_after(xeno_attacker, 2 SECONDS))
 		return
-	playsound(loc, 'sound/effects/metal_creaking.ogg', 25, 1)
+	playsound(loc, 'sound/effects/metal_creaking.ogg', 25, 1, MEDIUM_SOUND_RANGE)
 	go_out()
 
 #undef STATE_GUN

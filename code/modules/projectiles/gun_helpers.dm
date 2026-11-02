@@ -16,7 +16,8 @@
 /obj/item/weapon/gun/attack_hand_alternate(mob/user)
 	. = ..()
 	if(!active_attachable)
-		return toggle_gun_safety()
+		balloon_alert(user, "no attachment to unload")
+		return
 
 	var/mob/living/living_user = user
 	if(living_user.get_active_held_item() != src && living_user.get_inactive_held_item() != src)
@@ -61,7 +62,7 @@
 	//Cannot equip wielded items or items burst firing.
 	if(HAS_TRAIT(src, TRAIT_GUN_BURST_FIRING))
 		return
-	unwield(user)
+	//unwield(user) //shouldnt need this, just causes unequips when you fail to even unequip
 	return ..()
 
 
@@ -140,6 +141,23 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 		user.put_in_any_hand_if_possible(new_magazine)
 	reload(new_magazine, user)
 
+/// Occurs whenever the holder of the gun is attempted to be disarmed. Returns true if successful.
+/obj/item/weapon/gun/proc/handle_disarm_misfire(mob/living/carbon/human/disarmed, mob/living/carbon/human/disarmer)
+	if(disarmer.skills.getRating(SKILL_UNARMED) >= SKILL_UNARMED_MP)
+		return
+	if(windup_delay) // Must be instant to do anything meaningful.
+		return
+	var/chance = disarmed.get_active_held_item() == src ? 40 : 20
+	if(!prob(chance))
+		return
+	var/turf/random_nearby_turf = pick(RANGE_TURFS(3, get_turf(src)))
+	. = start_fire(gun_user, random_nearby_turf, random_nearby_turf, bypass_checks = TRUE) // Will return true if it successfully fired.
+	if(!.)
+		return
+	disarmed.visible_message(span_danger("[disarmed]'s [name] goes off during struggle!"), vision_distance = 5)
+	log_combat(disarmer, disarmed, "disarmed", "making their [name] go off")
+	stop_fire() // Otherwise, they will keep firing endlessly.
+
 //----------------------------------------------------------
 				//						 \\
 				// GENERIC HELPER PROCS  \\
@@ -180,11 +198,11 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 /obj/item/weapon/gun/proc/update_force_list()
 	switch(force)
 		if(-50 to 15)
-			attack_verb = list("struck", "hit", "bashed") //Unlikely to ever be -50, but just to be safe.
+			attack_verb = list("strikes", "hits", "bashes") //Unlikely to ever be -50, but just to be safe.
 		if(16 to 35)
-			attack_verb = list("smashed", "struck", "whacked", "beaten", "cracked")
+			attack_verb = list("smashes", "strikes", "whacks", "beats", "cracks")
 		else
-			attack_verb = list("slashed", "stabbed", "speared", "torn", "punctured", "pierced", "gored") //Greater than 35
+			attack_verb = list("slashes", "stabs", "spears", "tears", "punctures", "pierces", "gores") //Greater than 35
 
 
 /proc/get_active_firearm(mob/user)
@@ -269,7 +287,7 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 
 	if(ishuman(source))
 		to_chat(source, span_notice("[icon2html(src, source)] You switch to <b>[gun_firemode]</b>."))
-	playsound(src, 'sound/weapons/guns/interact/selector.ogg', 15, 1)
+	playsound(src, 'sound/weapons/guns/interact/selector.ogg', 15, 1, SHORT_SOUND_RANGE)
 	SEND_SIGNAL(src, COMSIG_GUN_FIRE_MODE_TOGGLE, gun_firemode)
 	setup_bullet_accuracy()
 	return TRUE
@@ -288,7 +306,7 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 			var/datum/action/new_action = new /datum/action/item_action/firemode(src)
 			if(user)
 				var/mob/living/living_user = user
-				if((src == living_user.l_hand || src == living_user.r_hand) && !CHECK_BITFIELD(item_flags, IS_DEPLOYED))
+				if((src == living_user.l_hand || src == living_user.r_hand) && !CHECK_BITFIELD(deployment_flags, IS_DEPLOYED))
 					new_action.give_action(living_user)
 		else //The action should already be there by now.
 			return
@@ -303,7 +321,7 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 			var/datum/action/old_action = locate(/datum/action/item_action/firemode) in actions
 			if(user)
 				var/mob/living/living_user = user
-				if((src == living_user.l_hand || src == living_user.r_hand) && !CHECK_BITFIELD(item_flags, IS_DEPLOYED))
+				if((src == living_user.l_hand || src == living_user.r_hand) && !CHECK_BITFIELD(deployment_flags, IS_DEPLOYED))
 					old_action.remove_action(living_user)
 			qdel(old_action)
 
@@ -362,7 +380,7 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 
 // todo destroy all verbs
 /mob/living/carbon/human/verb/empty_mag()
-	set category = "Weapons"
+	set category = "IC.Weapons"
 	set name = "Unload Weapon"
 	set desc = "Removes the magazine from your current gun and drops it on the ground, or clears the chamber if your gun is already empty."
 
@@ -381,7 +399,7 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 
 
 /mob/living/carbon/human/verb/use_unique_action()
-	set category = "Weapons"
+	set category = "IC.Weapons"
 	set name = "Unique Action"
 	set desc = "Use anything unique your firearm is capable of. Includes pumping a shotgun or spinning a revolver."
 
@@ -400,7 +418,7 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 
 
 /mob/living/carbon/human/verb/toggle_gun_safety()
-	set category = "Weapons"
+	set category = "IC.Weapons"
 	set name = "Toggle Gun Safety"
 	set desc = "Toggle the safety of the held gun."
 
@@ -416,7 +434,7 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 	set desc = "Toggle the safety of the held gun."
 
 	balloon_alert(usr, "Safety [HAS_TRAIT(src, TRAIT_GUN_SAFETY) ? "off" : "on"].")
-	playsound(usr, 'sound/weapons/guns/interact/selector.ogg', 15, 1)
+	playsound(usr, 'sound/weapons/guns/interact/selector.ogg', 15, 1, SHORT_SOUND_RANGE)
 	if(!HAS_TRAIT(src, TRAIT_GUN_SAFETY))
 		ADD_TRAIT(src, TRAIT_GUN_SAFETY, GUN_TRAIT)
 	else
@@ -424,7 +442,7 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 
 
 /mob/living/carbon/human/verb/activate_attachment_verb()
-	set category = "Weapons"
+	set category = "IC.Weapons"
 	set name = "Load From Attachment"
 	set desc = "Load from a gun attachment, such as a mounted grenade launcher, shotgun, or flamethrower."
 
@@ -470,7 +488,7 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 
 
 /mob/living/carbon/human/verb/toggle_rail_attachment()
-	set category = "Weapons"
+	set category = "IC.Weapons"
 	set name = "Toggle Rail Attachment"
 	set desc = "Uses the rail attachement currently attached to the gun."
 
@@ -503,15 +521,40 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 	set name = "Toggle Automatic Magazine Ejection (Weapon)"
 	set desc = "Toggles the automatic unloading of the gun's magazine upon depletion."
 
-	if(CHECK_BITFIELD(reciever_flags, AMMO_RECIEVER_AUTO_EJECT_LOCKED))
+	var/acceptable_guns = list()
+	if(!CHECK_BITFIELD(reciever_flags, AMMO_RECIEVER_AUTO_EJECT_LOCKED))
+		acceptable_guns += src
+
+	for(slot in attachments_by_slot)
+		if(!isgun(attachments_by_slot[slot]))
+			continue
+		var/obj/item/weapon/gun/attached_gun = attachments_by_slot[slot]
+		if(CHECK_BITFIELD(attached_gun.reciever_flags, AMMO_RECIEVER_AUTO_EJECT_LOCKED))
+			continue
+		acceptable_guns += attached_gun
+
+	if(!length(acceptable_guns))
 		balloon_alert(usr, "Cannot toggle ejection")
 		return
 
-	TOGGLE_BITFIELD(reciever_flags, AMMO_RECIEVER_AUTO_EJECT)
-	balloon_alert(usr, "Automatic unloading [CHECK_BITFIELD(reciever_flags, AMMO_RECIEVER_AUTO_EJECT) ? "enabled" : "disabled"].")
+	if(length(acceptable_guns) == 1)
+		var/obj/item/weapon/gun/chosen_gun = acceptable_guns[1]
+		TOGGLE_BITFIELD(chosen_gun.reciever_flags, AMMO_RECIEVER_AUTO_EJECT)
+		balloon_alert(usr, "Automatic unloading [CHECK_BITFIELD(chosen_gun.reciever_flags, AMMO_RECIEVER_AUTO_EJECT) ? "enabled" : "disabled"].")
+		return
+
+	INVOKE_ASYNC(src, PROC_REF(handle_auto_eject_async), usr, acceptable_guns)
+
+/// Offers a list to choose from. The selected weapon will have their auto ejection toggled.
+/obj/item/weapon/gun/proc/handle_auto_eject_async(user, list/obj/item/weapon/gun/acceptable_guns)
+	var/obj/item/weapon/gun/chosen_gun = tgui_input_list(user, "Choose an weapon", "Choose weapon", acceptable_guns)
+	if(!chosen_gun)
+		return
+	TOGGLE_BITFIELD(chosen_gun.reciever_flags, AMMO_RECIEVER_AUTO_EJECT)
+	balloon_alert(usr, "Automatic unloading [CHECK_BITFIELD(chosen_gun.reciever_flags, AMMO_RECIEVER_AUTO_EJECT) ? "enabled" : "disabled"].")
 
 /obj/item/weapon/gun/item_action_slot_check(mob/user, slot)
-	if(slot != SLOT_L_HAND && slot != SLOT_R_HAND && !CHECK_BITFIELD(item_flags, IS_DEPLOYED))
+	if(slot != SLOT_L_HAND && slot != SLOT_R_HAND && !CHECK_BITFIELD(deployment_flags, IS_DEPLOYED))
 		return FALSE
 	return TRUE
 
@@ -568,7 +611,7 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 
 /obj/item/weapon/gun/proc/toggle_auto_aim_mode(mob/living/carbon/human/user) //determines whether toggle_aim_mode activates at the end of gun/wield proc
 
-	if((item_flags & FULLY_WIELDED) || (item_flags & IS_DEPLOYED)) //if gun is wielded it toggles aim mode directly instead
+	if((item_flags & FULLY_WIELDED) || (deployment_flags & IS_DEPLOYED)) //if gun is wielded it toggles aim mode directly instead
 		toggle_aim_mode(user)
 		return
 
@@ -595,7 +638,7 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 			gunattachment.modify_auto_burst_delay(-aim_fire_delay)
 		to_chat(user, span_notice("You cease aiming."))
 		return
-	if(!(item_flags & WIELDED) && !(item_flags & IS_DEPLOYED))
+	if(!(item_flags & WIELDED) && !(deployment_flags & IS_DEPLOYED))
 		to_chat(user, span_notice("You need to wield your gun before aiming."))
 		return
 	if(!user.wear_id)
@@ -606,10 +649,10 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 	if(user.do_actions)
 		return
 	if(!user.marksman_aura)
-		if(!do_after(user, aim_time, (item_flags & IS_DEPLOYED) ? NONE : IGNORE_USER_LOC_CHANGE, (item_flags & IS_DEPLOYED) ? loc : src, BUSY_ICON_BAR))
+		if(!do_after(user, aim_time, (deployment_flags & IS_DEPLOYED) ? NONE : IGNORE_USER_LOC_CHANGE, (deployment_flags & IS_DEPLOYED) ? loc : src, BUSY_ICON_BAR))
 			to_chat(user, span_warning("<b>Your concentration is interrupted!</b>"))
 			return
-	if(!(item_flags & WIELDED) && !(item_flags & IS_DEPLOYED))
+	if(!(item_flags & WIELDED) && !(deployment_flags & IS_DEPLOYED))
 		to_chat(user, span_notice("You need to wield your gun before aiming."))
 		return
 	user.overlays += aim_mode_visual
@@ -627,7 +670,7 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 /// Signal handler to activate the rail attachement of that gun if it's in our active hand
 /obj/item/weapon/gun/proc/activate_rail_attachment()
 	SIGNAL_HANDLER
-	if(gun_user?.get_active_held_item() != src && !(item_flags & IS_DEPLOYED))
+	if(gun_user?.get_active_held_item() != src && !(deployment_flags & IS_DEPLOYED))
 		return
 	activate_attachment(ATTACHMENT_SLOT_RAIL, gun_user)
 	return COMSIG_KB_ACTIVATED
@@ -635,7 +678,7 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 /// Signal handler to activate the muzzle attachement of that gun if it's in our active hand
 /obj/item/weapon/gun/proc/activate_muzzle_attachment()
 	SIGNAL_HANDLER
-	if(gun_user?.get_active_held_item() != src && !(item_flags & IS_DEPLOYED))
+	if(gun_user?.get_active_held_item() != src && !(deployment_flags & IS_DEPLOYED))
 		return
 	activate_attachment(ATTACHMENT_SLOT_MUZZLE, gun_user)
 	return COMSIG_KB_ACTIVATED
@@ -643,7 +686,7 @@ As sniper rifles have both and weapon mods can change them as well. ..() deals w
 /// Signal handler to activate the underrail attachement of that gun if it's in our active hand
 /obj/item/weapon/gun/proc/activate_underrail_attachment()
 	SIGNAL_HANDLER
-	if(gun_user?.get_active_held_item() != src && !(item_flags & IS_DEPLOYED))
+	if(gun_user?.get_active_held_item() != src && !(deployment_flags & IS_DEPLOYED))
 		return
 	activate_attachment(ATTACHMENT_SLOT_UNDER, gun_user)
 	return COMSIG_KB_ACTIVATED

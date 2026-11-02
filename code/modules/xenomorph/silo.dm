@@ -26,10 +26,17 @@
 		SSspawning.spawnerdata[src].max_allowed_mobs = max(1, MAX_SPAWNABLE_MOB_PER_PLAYER * SSmonitor.maximum_connected_players_count * 0.5)
 	update_minimap_icon()
 
+	if(SSticker.mode?.round_type_flags & MODE_SILO_RESPAWN)
+		SSaura.add_emitter(src, AURA_XENO_RECOVERY, 30, 4, -1, FACTION_XENO, hivenumber)
+		SSaura.add_emitter(src, AURA_XENO_WARDING, 30, 4, -1, FACTION_XENO, hivenumber)
+		SSaura.add_emitter(src, AURA_XENO_FRENZY, 30, 4, -1, FACTION_XENO, hivenumber)
+
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/structure/xeno/silo/LateInitialize()
 	. = ..()
+	if(!(SSticker.mode?.round_type_flags & MODE_SILO_RESPAWN))
+		QDEL_NULL(proximity_monitor)
 	var/siloprefix = GLOB.hive_datums[hivenumber].name
 	number_silo = length(GLOB.xeno_resin_silos_by_hive[hivenumber]) + 1
 	name = "[siloprefix == "Normal" ? "" : "[siloprefix] "][name] [number_silo]"
@@ -41,21 +48,18 @@
 		RegisterSignals(GLOB.hive_datums[hivenumber], list(COMSIG_HIVE_XENO_MOTHER_PRE_CHECK, COMSIG_HIVE_XENO_MOTHER_CHECK), PROC_REF(is_burrowed_larva_host))
 		if(length(GLOB.xeno_resin_silos_by_hive[hivenumber]) == 1)
 			GLOB.hive_datums[hivenumber].give_larva_to_next_in_queue()
+	SSticker.mode.update_silo_death_timer(GLOB.hive_datums[hivenumber])
 	var/turf/tunnel_turf = get_step(src, NORTH)
 	if(tunnel_turf.can_dig_xeno_tunnel())
 		var/obj/structure/xeno/tunnel/newt = new(tunnel_turf, hivenumber)
 		newt.tunnel_desc = "[AREACOORD_NO_Z(newt)]"
 		newt.name += " [name]"
 
-/obj/structure/xeno/silo/set_proximity_warning()
-	if(!(SSticker.mode?.round_type_flags & MODE_SILO_RESPAWN))
-		return
-	return ..()
-
 /obj/structure/xeno/silo/obj_destruction(damage_amount, damage_type, damage_flag, mob/living/blame_mob)
 	if(GLOB.hive_datums[hivenumber])
 		UnregisterSignal(GLOB.hive_datums[hivenumber], list(COMSIG_HIVE_XENO_MOTHER_PRE_CHECK, COMSIG_HIVE_XENO_MOTHER_CHECK))
 		GLOB.hive_datums[hivenumber].xeno_message("A resin silo has been destroyed at [AREACOORD_NO_Z(src)]!", "xenoannounce", 5, FALSE, loc, 'sound/voice/alien/help2.ogg',FALSE , null, /atom/movable/screen/arrow/silo_damaged_arrow)
+		INVOKE_NEXT_TICK(SSticker.mode, TYPE_PROC_REF(/datum/game_mode, update_silo_death_timer), GLOB.hive_datums[hivenumber]) // checks all silos next tick after this one is gone
 		notify_ghosts("\ A resin silo has been destroyed at [AREACOORD_NO_Z(src)]!", source = get_turf(src), action = NOTIFY_JUMP)
 		playsound(loc,'sound/effects/alien/egg_burst.ogg', 75)
 	return ..()
@@ -94,7 +98,7 @@
 
 /obj/structure/xeno/silo/update_minimap_icon()
 	SSminimaps.remove_marker(src)
-	SSminimaps.add_marker(src, MINIMAP_FLAG_XENO, image('icons/UI_icons/map_blips.dmi', null, "silo[threat_warning ? "_warn" : "_passive"]", HIGH_FLOAT_LAYER))
+	SSminimaps.add_marker(src, MINIMAP_FLAG_XENO, image('icons/UI_icons/map_blips.dmi', null, "silo[threat_warning ? "_warn" : "_passive"]", MINIMAP_PRIORITY_LAYER))
 
 /obj/structure/xeno/silo/process()
 	//Regenerate if we're at less than max integrity

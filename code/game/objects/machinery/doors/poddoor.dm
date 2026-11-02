@@ -4,9 +4,9 @@
 	icon = 'icons/obj/doors/rapid_pdoor.dmi'
 	icon_state = "pdoor1"
 	soft_armor = list(MELEE = 50, BULLET = 100, LASER = 100, ENERGY = 100, BOMB = 50, BIO = 100, FIRE = 100, ACID = 70)
-	layer = PODDOOR_OPEN_LAYER
-	open_layer = PODDOOR_OPEN_LAYER
-	closed_layer = PODDOOR_CLOSED_LAYER
+	layer = BLASTDOOR_LAYER
+	open_layer = BLASTDOOR_LAYER
+	closed_layer = CLOSED_BLASTDOOR_LAYER
 	obj_flags = NONE
 	explosion_block = 6
 	smoothing_groups = list(SMOOTH_GROUP_SHUTTERS)
@@ -61,7 +61,7 @@
 			flick("pdoorc0", src)
 		if("closing")
 			flick("pdoorc1", src)
-	playsound(loc, 'sound/machines/blastdoor.ogg', 25)
+	playsound(loc, 'sound/machines/blastdoor.ogg', 25, FALSE, MEDIUM_SOUND_RANGE)
 
 /obj/machinery/door/poddoor/opened
 	density = FALSE
@@ -182,7 +182,7 @@
 /obj/machinery/door/poddoor/mainship/open
 	density = FALSE
 	opacity = FALSE
-	layer = PODDOOR_OPEN_LAYER
+	layer = BLASTDOOR_LAYER
 	icon_state = "pdoor0"
 
 
@@ -246,6 +246,19 @@
 /obj/machinery/door/poddoor/mainship/indestructible
 	resistance_flags = RESIST_ALL
 
+/obj/machinery/door/poddoor/mainship/req_hvh
+	id = "req_hvh"
+	resistance_flags = RESIST_ALL
+
+/obj/machinery/door/poddoor/mainship/req_hvh/Initialize(mapload)
+	RegisterSignal(SSdcs, COMSIG_GLOB_GAMEMODE_LOADED, PROC_REF(open_req))
+	return ..()
+
+/obj/machinery/door/poddoor/mainship/req_hvh/proc/open_req()
+	SIGNAL_HANDLER
+	if(CHECK_BITFIELD(SSticker.mode?.round_type_flags, MODE_ENCOUNTER))
+		open()
+	UnregisterSignal(SSdcs, COMSIG_GLOB_GAMEMODE_LOADED)
 
 /obj/machinery/door/poddoor/timed_late
 	icon = 'icons/obj/doors/mainship/blastdoors_shutters.dmi'
@@ -263,7 +276,7 @@
 	name = "Containment shutters"
 	desc = "Safety shutters triggered by some kind of lockdown event."
 	resistance_flags = DROPSHIP_IMMUNE|RESIST_ALL
-	open_layer = UNDER_TURF_LAYER //No longer needs to be interacted with.
+	open_layer = ABOVE_NORMAL_TURF_LAYER //No longer needs to be interacted with.
 	closed_layer = ABOVE_WINDOW_LAYER //Higher than usual, this is only around on the start of the round.
 
 
@@ -301,10 +314,9 @@ GLOBAL_LIST_INIT(faction_to_campaign_door_signal, list(
 	icon = 'icons/obj/doors/mainship/blastdoors_shutters.dmi'
 	use_power = FALSE
 	resistance_flags = DROPSHIP_IMMUNE|RESIST_ALL
-	open_layer = UNDER_TURF_LAYER
+	open_layer = ABOVE_NORMAL_TURF_LAYER
 	closed_layer = ABOVE_WINDOW_LAYER
-	///Faction associated with the door, for signal purposes
-	var/faction = FACTION_TERRAGOV
+	faction = FACTION_TERRAGOV
 
 /obj/machinery/door/poddoor/campaign/Initialize(mapload)
 	RegisterSignal(SSdcs, GLOB.faction_to_campaign_door_signal[faction], PROC_REF(open))
@@ -320,7 +332,7 @@ GLOBAL_LIST_INIT(faction_to_campaign_door_signal, list(
 	icon = 'icons/obj/doors/mainship/blastdoors_shutters.dmi'
 	use_power = FALSE
 	resistance_flags = DROPSHIP_IMMUNE|RESIST_ALL
-	open_layer = UNDER_TURF_LAYER
+	open_layer = ABOVE_NORMAL_TURF_LAYER
 	closed_layer = ABOVE_WINDOW_LAYER
 	///color associated with the door, for signal purposes
 	var/code_color = MISSION_CODE_BLUE

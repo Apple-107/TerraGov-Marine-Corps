@@ -9,26 +9,26 @@
 
 /obj/item/tool/surgery/retractor
 	name = "retractor"
-	desc = "Retracts stuff."
+	desc = "For fine manipulation during surgery."
 	icon_state = "retractor"
 	atom_flags = CONDUCT
 	w_class = WEIGHT_CLASS_SMALL
 
 /obj/item/tool/surgery/hemostat
 	name = "hemostat"
-	desc = "You think you have seen this before."
+	desc = "For removing foreign objects during surgery."
 	icon_state = "hemostat"
 	atom_flags = CONDUCT
 	w_class = WEIGHT_CLASS_SMALL
-	attack_verb = list("attacked", "pinched")
+	attack_verb = list("attacks", "pinches")
 
 /obj/item/tool/surgery/cautery
 	name = "cautery"
-	desc = "This stops bleeding."
+	desc = "For closing incisions to finish a surgery."
 	icon_state = "cautery"
 	atom_flags = CONDUCT
 	w_class = WEIGHT_CLASS_TINY
-	attack_verb = list("burnt")
+	attack_verb = list("burns")
 
 /obj/item/tool/surgery/surgicaldrill
 	name = "surgical drill"
@@ -38,10 +38,10 @@
 	atom_flags = CONDUCT
 	force = 15
 	w_class = WEIGHT_CLASS_SMALL
-	attack_verb = list("drilled")
+	attack_verb = list("drills")
 
 /obj/item/tool/surgery/surgicaldrill/suicide_act(mob/user)
-	user.visible_message(span_danger("[user] is pressing the [name] to [user.p_their()] [pick("temple","chest")] and activating it! It looks like [user.p_theyre()] trying to commit suicide."))
+	user.visible_message(span_danger("[user] presses the [name] to [user.p_their()] [pick("temple","chest")] and activates it! It looks like [user.p_theyre()] trying to commit suicide!"))
 	return (BRUTELOSS)
 
 /obj/item/tool/surgery/scalpel
@@ -56,7 +56,7 @@
 	throwforce = 5
 	throw_speed = 3
 	throw_range = 5
-	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
+	attack_verb = list("attacks", "slashes", "stabs", "slices", "tears", "rips", "dices", "cuts")
 
 /obj/item/tool/surgery/scalpel/suicide_act(mob/user)
 	user.visible_message(pick(span_danger("[user] is slitting [user.p_their()] wrists with the [name]! It looks like [user.p_theyre()] trying to commit suicide."), \
@@ -85,7 +85,7 @@
 */
 /obj/item/tool/surgery/circular_saw
 	name = "circular saw"
-	desc = "For heavy duty cutting."
+	desc = "For opening someone's ribcage, surgically."
 	icon_state = "saw"
 	hitsound = 'sound/weapons/circsawhit.ogg'
 	atom_flags = CONDUCT
@@ -94,13 +94,14 @@
 	throwforce = 9
 	throw_speed = 3
 	throw_range = 5
-	attack_verb = list("attacked", "slashed", "sawed", "cut")
+	attack_verb = list("attacks", "slashes", "saws", "cuts")
 	sharp = IS_SHARP_ITEM_BIG
 	edge = 1
 
 //misc, formerly from code/defines/weapons.dm
 /obj/item/tool/surgery/bonegel
 	name = "bone gel"
+	desc = "For repairing fractures and closing ribcages."
 	icon_state = "bone-gel"
 	force = 0
 	w_class = WEIGHT_CLASS_SMALL
@@ -108,6 +109,7 @@
 
 /obj/item/tool/surgery/FixOVein
 	name = "FixOVein"
+	desc = "For fixing internal bleeding."
 	icon_state = "fixovein"
 	force = 0
 	throwforce = 1
@@ -117,24 +119,27 @@
 /obj/item/tool/surgery/bonesetter
 	name = "bone setter"
 	icon_state = "bonesetter"
+	desc = "For setting fractured bone after bone gel is applied."
 	force = 8
 	throwforce = 9
 	throw_speed = 3
 	throw_range = 5
 	w_class = WEIGHT_CLASS_SMALL
-	attack_verb = list("attacked", "hit", "bludgeoned")
+	attack_verb = list("attacks", "hits", "bludgeons")
 
 /obj/item/tool/surgery/suture
 	name = "surgical suture"
 	icon_state = "suture"
+	desc = "For healing basic brute and burn damage during surgery."
 	force = 3
 	throwforce = 0
 	w_class = WEIGHT_CLASS_SMALL
-	attack_verb = list("needled", "sewed", "stabbed")
+	attack_verb = list("needles", "sews", "stabs")
 
 /obj/item/tool/surgery/surgical_membrane
 	name = "surgical membrane"
 	icon_state = "surgical_membrane"
+	desc = "For repairing damaged organs and necrotized tissue during surgery."
 	force = 0
 	throwforce = 0
 	w_class = WEIGHT_CLASS_SMALL

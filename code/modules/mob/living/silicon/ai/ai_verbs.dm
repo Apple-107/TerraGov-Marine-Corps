@@ -236,7 +236,7 @@
 		return
 
 	src.anchored = !anchored
-	playsound(loc,'sound/mecha/mechanical_toggle.ogg', 20)
+	playsound(loc,'sound/mecha/mechanical_toggle.ogg', 20, FALSE, MEDIUM_SOUND_RANGE)
 
 
 	to_chat(src, "<b>You are now [anchored ? "" : "un"]anchored.</b>")
@@ -321,3 +321,17 @@
 	priority_announce("[src] has suffered an unexpected NTOS failure over its Logarithmic silicon backhaul functions and has been taken offline. An attempt to load a backup personality core will proceed shortly.", "AI NT-OS Critical Failure")
 	ghostize(FALSE)
 	offer_mob()
+
+/mob/living/silicon/ai/up()
+	set name = "Move Upwards"
+	set category = "IC"
+
+	if(eyeobj.zMove(UP, z_move_flags = ZMOVE_IGNORE_OBSTACLES|ZMOVE_FEEDBACK))
+		to_chat(src, span_notice("You move upwards."))
+
+/mob/living/silicon/ai/down()
+	set name = "Move Down"
+	set category = "IC"
+
+	if(eyeobj.zMove(DOWN, z_move_flags = ZMOVE_IGNORE_OBSTACLES|ZMOVE_FEEDBACK))
+		to_chat(src, span_notice("You move down."))

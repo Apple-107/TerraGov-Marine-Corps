@@ -147,7 +147,12 @@
 	icon_state = "containment_window"
 	opacity = FALSE
 
-
+/turf/closed/wall/mainship/bulletproof
+	name = "bulletproof wall"
+	desc = "A huge chunk of metal used to seperate rooms and make up the ship. Impervious to small arms fire."
+	soft_armor = list(MELEE = 0, BULLET = 200, LASER = 200, ENERGY = 200, BOMB = 200, BIO = 0, FIRE = 0, ACID = 0)
+	
+	
 /turf/closed/wall/desert
 	name = "wall"
 	icon = 'icons/turf/walls/chigusa.dmi'
@@ -262,16 +267,18 @@
 
 /turf/closed/wall/indestructible/splashscreen
 	name = "Space Station 13"
-	icon = 'icons/misc/title.dmi'
-	icon_state = "title_painting1"
-//	icon_state = "title_holiday"
-	layer = FLY_LAYER
+	plane = SPLASHSCREEN_PLANE
+	icon_state = ""
 	pixel_x = -64
 
-/turf/closed/wall/indestructible/splashscreen/New()
-	..()
-	if(icon_state == "title_painting1")
-		icon_state = "title_painting[rand(0,35)]"
+INITIALIZE_IMMEDIATE(/turf/closed/wall/indestructible/splashscreen)
+/turf/closed/wall/indestructible/splashscreen/Initialize(mapload, ...)
+	. = ..()
+	var/prefix = "icons/misc/lobby_art/"
+	var/list/lobby_art = flist(prefix)
+	if(!length(lobby_art))
+		return
+	icon = icon("[prefix]" + pick(lobby_art))
 
 /turf/closed/wall/indestructible/other
 	icon_state = "r_wall"
@@ -357,8 +364,8 @@
 /turf/closed/wall/vault
 	icon_state = "rockvault"
 
-/turf/closed/wall/vault/New(location,type)
-	..()
+/turf/closed/wall/vault/Initialize(mapload, type)
+	. = ..()
 	icon_state = "[type]vault"
 
 /turf/closed/wall/desertcavewall
@@ -495,3 +502,11 @@
 	icon_state = "engineer_walls-0"
 	walltype = "wall"
 	base_icon_state = "engineer_walls"
+
+/turf/closed/wall/elevator
+	name = "elevator wall"
+	desc = "Nigh indestructible walls that make up the hull of a elevator."
+	icon = 'icons/turf/walls/elevator_wall.dmi'
+	icon_state = "elevator_wall-0"
+	walltype = "wall"
+	base_icon_state = "elevator_wall"

@@ -31,12 +31,26 @@
 	icon = 'icons/obj/contraband.dmi'
 	icon_state = "poster_map"
 	anchored = TRUE
-	var/serial_number	//Will hold the value of src.loc if nobody initialises it
+	base_icon = 'icons/obj/contraband.dmi'
+
+	var/serial_number
 	var/ruined = 0
 
-/obj/structure/sign/poster/Initialize(mapload)
+
+/obj/structure/sign/poster/Initialize(mapload, serial)
 	. = ..()
-	icon = 'icons/obj/contraband.dmi'
+
+	serial_number = serial
+
+	if(!serial_number)
+		serial_number = rand(1, length(GLOB.poster_designs))	//This is for the mappers that want individual posters without having to use rolled posters.
+
+	var/designtype = GLOB.poster_designs[serial_number]
+	var/datum/poster/design = new designtype
+	name += " - [design.name]"
+	desc += " [design.desc]"
+	icon_state = design.icon_state // poster[serial_number]
+
 	if(autoplace)
 		return
 	switch(dir)
@@ -49,26 +63,13 @@
 		if(WEST)
 			pixel_x = -30
 
-/obj/structure/sign/poster/New(serial)
-
-	serial_number = serial
-
-	if(serial_number == loc)
-		serial_number = rand(1, length(GLOB.poster_designs))	//This is for the mappers that want individual posters without having to use rolled posters.
-
-	var/designtype = GLOB.poster_designs[serial_number]
-	var/datum/poster/design=new designtype
-	name += " - [design.name]"
-	desc += " [design.desc]"
-	icon_state = design.icon_state // poster[serial_number]
-	..()
 
 /obj/structure/sign/poster/attackby(obj/item/I, mob/user, params)
 	. = ..()
 	if(.)
 		return
 	if(iswirecutter(I))
-		playsound(loc, 'sound/items/wirecutter.ogg', 25, 1)
+		I.play_tool_sound(src)
 		if(ruined)
 			to_chat(user, span_notice("You remove the remnants of the poster."))
 			qdel(src)
@@ -89,7 +90,7 @@
 			if(user.loc != temp_loc)
 				return
 			visible_message(span_warning("[user] rips [src] in a single, decisive motion!") )
-			playsound(src.loc, 'sound/items/poster_ripped.ogg', 25, 1)
+			playsound(src.loc, 'sound/items/poster_ripped.ogg', 25, 1, MEDIUM_SOUND_RANGE)
 			ruined = 1
 			icon_state = "poster_ripped"
 			name = "ripped poster"
@@ -130,7 +131,7 @@
 	flick("poster_being_set",D)
 	D.loc = src
 	qdel(P)	//delete it now to cut down on sanity checks afterwards. Agouri's code supports rerolling it anyway
-	playsound(D.loc, 'sound/items/poster_being_created.ogg', 25, 1)
+	playsound(D.loc, 'sound/items/poster_being_created.ogg', 25, 1, MEDIUM_SOUND_RANGE)
 
 	sleep(1.7 SECONDS)
 	if(!D)	return

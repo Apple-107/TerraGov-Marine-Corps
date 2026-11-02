@@ -12,7 +12,6 @@
 	soft_armor = list(MELEE = 0, BULLET = 0, LASER = 0, ENERGY = 100, BOMB = 0, BIO = 100, FIRE = 40, ACID = 0)
 	var/frequency = 0
 	var/atom/target
-	var/id_tag
 	var/target_layer = PIPING_LAYER_DEFAULT
 
 /obj/machinery/meter/Destroy()
@@ -61,7 +60,7 @@
 	if(iswrench(I))
 		return wrench_act(user, I)
 
-/obj/machinery/meter/wrench_act(mob/user, obj/item/I)
+/obj/machinery/meter/wrench_act(mob/user, obj/item/tool)
 	to_chat(user, span_notice("You begin to unfasten \the [src]..."))
 	if(do_after(user, 4 SECONDS, NONE, src, BUSY_ICON_BUILD))
 		user.visible_message(

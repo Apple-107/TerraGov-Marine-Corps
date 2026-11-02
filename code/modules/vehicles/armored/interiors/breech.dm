@@ -65,7 +65,7 @@
 	if(istype(mag, /obj/item/ammo_magazine/tank))
 		var/obj/item/ammo_magazine/tank/t_mag = mag
 		sound = islist(t_mag.loading_sound)? pick(t_mag.loading_sound):t_mag.loading_sound
-	playsound(src, sound, 20, channel = channel)
+	playsound(src, sound, 20, FALSE, MEDIUM_SOUND_RANGE, channel = channel)
 	if(!do_after(user, weapon.rearm_time, NONE, src, extra_checks=CALLBACK(src, PROC_REF(reload_checks), user)))
 		for(var/mob/crew AS in owner.interior.occupants)
 			crew.stop_sound_channel(channel)
@@ -84,7 +84,8 @@
 		return
 	weapon.reload()
 	update_appearance(UPDATE_ICON)
-	user.say(is_secondary ? "Loaded!" : "Up!")
+	var/obj/item/ammo_magazine/tank/callout = mag
+	user.say(is_secondary ? "Loaded!" : (callout.callout_name ? "[callout.callout_name], Up!" : "Up!"))
 
 ///Unloads the weapon attached to the breech
 /obj/structure/gun_breech/proc/do_unload(mob/living/user, obj/item/armored_weapon/weapon)

@@ -8,7 +8,7 @@
 
 /datum/action/ability/xeno_action/New(Target)
 	. = ..()
-	var/mutable_appearance/empowered_appearence = mutable_appearance('icons/Xeno/actions/general.dmi', "borders_center", ACTION_LAYER_EMPOWERED, FLOAT_PLANE)
+	var/mutable_appearance/empowered_appearence = mutable_appearance('icons/Xeno/actions/general.dmi', "borders_center", ACTION_LAYER_EMPOWERED)
 	visual_references[VREF_MUTABLE_EMPOWERED_FRAME] = empowered_appearence
 
 /datum/action/ability/xeno_action/give_action(mob/living/L)
@@ -21,7 +21,7 @@
 	xeno_owner = null
 	return ..()
 
-/datum/action/ability/xeno_action/can_use_action(silent = FALSE, override_flags)
+/datum/action/ability/xeno_action/can_use_action(silent, override_flags, selecting)
 	. = ..()
 	if(!.)
 		return
@@ -32,17 +32,17 @@
 
 	if(!(to_check_flags & ABILITY_USE_FORTIFIED) && xeno_owner.fortify)
 		if(!silent)
-			xeno_owner.balloon_alert(xeno_owner, "Cannot while fortified")
+			xeno_owner.balloon_alert(xeno_owner, "cannot while fortified!")
 		return FALSE
 
 	if(!(to_check_flags & ABILITY_USE_CRESTED) && xeno_owner.crest_defense)
 		if(!silent)
-			xeno_owner.balloon_alert(xeno_owner, "Cannot while in crest defense")
+			xeno_owner.balloon_alert(xeno_owner, "cannot while in crest defense!")
 		return FALSE
 
 	if(!(to_check_flags & ABILITY_IGNORE_PLASMA) && xeno_owner.plasma_stored < ability_cost)
 		if(!silent)
-			xeno_owner.balloon_alert(xeno_owner, "Need [ability_cost - xeno_owner.plasma_stored] more plasma")
+			xeno_owner.balloon_alert(xeno_owner, "need [ability_cost - xeno_owner.plasma_stored] more plasma!")
 		return FALSE
 
 	return TRUE
@@ -54,7 +54,7 @@
 
 /datum/action/ability/activable/xeno/New(Target)
 	. = ..()
-	var/mutable_appearance/empowered_appearence = mutable_appearance('icons/Xeno/actions/general.dmi', "borders_center", ACTION_LAYER_EMPOWERED, FLOAT_PLANE)
+	var/mutable_appearance/empowered_appearence = mutable_appearance('icons/Xeno/actions/general.dmi', "borders_center", ACTION_LAYER_EMPOWERED)
 	visual_references[VREF_MUTABLE_EMPOWERED_FRAME] = empowered_appearence
 
 /datum/action/ability/activable/xeno/give_action(mob/living/L)
@@ -67,7 +67,7 @@
 	xeno_owner = null
 	return ..()
 
-/datum/action/ability/activable/xeno/can_use_action(silent = FALSE, override_flags)
+/datum/action/ability/activable/xeno/can_use_action(silent, override_flags, selecting)
 	. = ..()
 	if(!.)
 		return
@@ -78,17 +78,17 @@
 
 	if(!(to_check_flags & ABILITY_USE_FORTIFIED) && xeno_owner.fortify)
 		if(!silent)
-			xeno_owner.balloon_alert(xeno_owner, "Cannot while fortified")
+			xeno_owner.balloon_alert(xeno_owner, "cannot while fortified!")
 		return FALSE
 
 	if(!(to_check_flags & ABILITY_USE_CRESTED) && xeno_owner.crest_defense)
 		if(!silent)
-			xeno_owner.balloon_alert(xeno_owner, "Cannot while in crest defense")
+			xeno_owner.balloon_alert(xeno_owner, "cannot while in crest defense!")
 		return FALSE
 
 	if(!(to_check_flags & ABILITY_IGNORE_PLASMA) && xeno_owner.plasma_stored < ability_cost)
 		if(!silent)
-			xeno_owner.balloon_alert(xeno_owner, "Need [ability_cost - xeno_owner.plasma_stored] more plasma")
+			xeno_owner.balloon_alert(xeno_owner, "need [ability_cost - xeno_owner.plasma_stored] more plasma!")
 		return FALSE
 
 	return TRUE

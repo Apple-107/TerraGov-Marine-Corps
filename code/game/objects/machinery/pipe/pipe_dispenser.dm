@@ -14,7 +14,7 @@
 	if(.)
 		return
 
-	var/dat = "PIPING LAYER: <A href='?src=[REF(src)];layer_down=1'>--</A><b>[piping_layer]</b><A href='?src=[REF(src)];layer_up=1'>++</A><BR>"
+	var/dat = "PIPING LAYER: <A href='byond://?src=[REF(src)];layer_down=1'>--</A><b>[piping_layer]</b><A href='byond://?src=[REF(src)];layer_up=1'>++</A><BR>"
 
 	var/recipes = GLOB.atmos_pipe_recipes
 
@@ -73,14 +73,13 @@
 
 	else if(iswrench(I))
 		if(anchored)
-			playsound(loc, 'sound/items/ratchet.ogg', 25, 1)
 			to_chat(user, span_notice("You begin to unfasten \the [src] from the floor..."))
 
-			if(!do_after(user, 40, NONE, src, BUSY_ICON_BUILD))
+			if(!I.use_tool(src, user, 4 SECONDS, user_display = BUSY_ICON_BUILD))
 				return
 
 			user.visible_message("[user] unfastens \the [src].", \
-				span_notice(" You have unfastened \the [src]. Now it can be pulled somewhere else."), \
+				span_notice("You have unfastened \the [src]. Now it can be pulled somewhere else."), \
 				"You hear ratchet.")
 			anchored = FALSE
 			machine_stat |= MAINT
@@ -88,14 +87,13 @@
 			if(user.interactee == src)
 				usr << browse(null, "window=pipedispenser")
 		else
-			playsound(loc, 'sound/items/ratchet.ogg', 25, 1)
 			to_chat(user, span_notice("You begin to fasten \the [src] to the floor..."))
 
-			if(!do_after(user, 20, NONE, src, BUSY_ICON_BUILD))
+			if(!I.use_tool(src, user, 2 SECONDS, user_display = BUSY_ICON_BUILD))
 				return
 
 			user.visible_message("[user] fastens \the [src].", \
-				span_notice(" You have fastened \the [src]. Now it can dispense pipes."), \
+				span_notice("You have fastened \the [src]. Now it can dispense pipes."), \
 				"You hear ratchet.")
 			anchored = TRUE
 			machine_stat &= ~MAINT
@@ -124,7 +122,7 @@
 	if(user.incapacitated() || !istype(pipe) || get_dist(user, src) > 1 || get_dist(src, pipe) > 1 || pipe.anchored)
 		return
 
-	user.balloon_alert(user, "Recycled pipe.")
+	user.balloon_alert(user, "recycled pipe")
 	qdel(pipe)
 
 /obj/machinery/pipedispenser/disposal/interact(mob/user)

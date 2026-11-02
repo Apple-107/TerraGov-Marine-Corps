@@ -377,7 +377,6 @@
 	l_hand = /obj/item/paper/tutorial/builder
 
 	backpack_contents = list(
-		/obj/item/stack/sheet/metal/small_stack = 1,
 		/obj/item/stack/sandbags_empty/full = 1,
 		/obj/item/tool/shovel/etool = 1,
 		/obj/item/storage/box/m94 = 1,
@@ -387,6 +386,8 @@
 
 	suit_contents = list(
 		/obj/item/stack/sheet/metal/large_stack = 3,
+		/obj/item/stack/sheet/metal/small_stack = 2,
+		/obj/item/stack/sheet/plasteel/large_stack = 1,
 	)
 
 
@@ -448,6 +449,67 @@
 		/obj/item/explosive/plastique = 1,
 	)
 
+/datum/outfit/quick/beginner/engineer/point_sentry
+	name = "Sentry Pointman"
+	desc = "The perfect mobile guard. Equipped with a point defence sentry and flechette shotgun, you are the ideal engineer for protecting medics or locking down a flank."
+
+	suit_store = /obj/item/weapon/gun/shotgun/pump/t35/beginner/flechette
+	wear_suit = /obj/item/clothing/suit/modular/xenonauten/mirage_engineer
+	mask = /obj/item/clothing/mask/gas
+	head = /obj/item/clothing/head/modular/m10x/superiorwelding
+	back = /obj/item/storage/backpack/marine/engineerpack
+	belt = /obj/item/storage/belt/shotgun/flechette
+	glasses = /obj/item/clothing/glasses/meson
+	l_hand = /obj/item/paper/tutorial/point_sentry
+
+	backpack_contents = list(
+		/obj/item/storage/box/m94 = 3,
+		/obj/item/ammo_magazine/minisentry = 2,
+		/obj/item/weapon/gun/sentry/mini = 1,
+	)
+
+	suit_contents = list(
+		/obj/item/stack/sheet/metal/large_stack = 1,
+		/obj/item/stack/sheet/plasteel/small_stack = 1,
+		/obj/item/cell/high = 1,
+		/obj/item/explosive/plastique = 1,
+	)
+
+/datum/outfit/quick/beginner/engineer/mortar
+	name = "Mortar Firesupport"
+	desc = "For those cheering from a distance. Equipped with a mortar bag, range finder, and an AR11, you are perfect for providing supporting fire and securing positions."
+	suit_store = /obj/item/weapon/gun/rifle/tx11/freelancerone
+	wear_suit = /obj/item/clothing/suit/modular/xenonauten/engineer
+	mask = /obj/item/clothing/mask/gas
+	head = /obj/item/clothing/head/modular/m10x/superiorwelding
+	back = /obj/item/storage/holster/backholster/mortar/full
+	glasses = /obj/item/clothing/glasses/meson
+	l_hand = /obj/item/paper/tutorial/mortar
+
+	backpack_contents = list(
+		/obj/item/mortal_shell/he = 5,
+		/obj/item/mortal_shell/incendiary = 4,
+		/obj/item/mortal_shell/plasmaloss = 4,
+	)
+
+	suit_contents = list(
+		/obj/item/stack/sheet/metal/large_stack = 2,
+		/obj/item/stack/sheet/plasteel/medium_stack = 1,
+		/obj/item/circuitboard/apc = 1,
+		/obj/item/cell/high = 1,
+	)
+
+	belt_contents = list(
+		/obj/item/ammo_magazine/rifle/tx11 = 6,
+	)
+
+	webbing_contents = list(
+		/obj/item/explosive/grenade/chem_grenade/razorburn_small = 1,
+		/obj/item/compass = 1,
+		/obj/item/binoculars/tactical/range = 1,
+		/obj/item/stack/medical/heal_pack/gauze = 1,
+		/obj/item/stack/medical/heal_pack/ointment = 1,
+	)
 
 /datum/outfit/quick/beginner/corpsman
 	jobtype = "Squad Corpsman"
@@ -511,7 +573,7 @@
 
 	suit_store = /obj/item/weapon/gun/shotgun/pump/t35/beginner
 	wear_suit = /obj/item/clothing/suit/modular/xenonauten/light/lightmedical
-	gloves = /obj/item/healthanalyzer/gloves
+	gloves = /obj/item/clothing/gloves/healthanalyzer
 	mask = /obj/item/clothing/mask/gas/modular/coofmask
 	head = /obj/item/clothing/head/modular/m10x/antenna
 	r_pocket = /obj/item/storage/pouch/medkit/medic

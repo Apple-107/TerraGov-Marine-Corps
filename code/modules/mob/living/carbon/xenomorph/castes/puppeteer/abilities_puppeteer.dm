@@ -38,10 +38,10 @@
 	xeno_owner.face_atom(target_human)
 	xeno_owner.do_attack_animation(target_human, ATTACK_EFFECT_REDSLASH)
 	xeno_owner.visible_message(target_human, span_danger("[xeno_owner] flays and rips skin and flesh from [target_human]!"))
-	playsound(target_human, SFX_ALIEN_CLAW_FLESH, 25, TRUE)
+	playsound(target_human, SFX_ALIEN_CLAW_FLESH, 25, TRUE, MEDIUM_SOUND_RANGE)
 	target_human.emote("scream")
 	xeno_owner.emote("roar")
-	target_human.apply_damage(30, def_zone = BODY_ZONE_CHEST, blocked = MELEE, sharp = TRUE, edge = FALSE, updating_health = TRUE, penetration = 15)
+	target_human.apply_damage(30, def_zone = BODY_ZONE_CHEST, blocked = MELEE, sharp = TRUE, edge = FALSE, updating_health = TRUE, penetration = 15, attacker = owner)
 	target_human.Paralyze(0.8 SECONDS)
 
 	xeno_owner.gain_plasma(xeno_owner.xeno_caste.flay_plasma_gain)
@@ -67,22 +67,23 @@
 		return
 	if(xeno_owner.do_actions)
 		return FALSE
+
+/datum/action/ability/activable/xeno/pincushion/use_ability(atom/victim)
 	xeno_owner.face_atom(victim)
 	if(!do_after(xeno_owner, 0.3 SECONDS, IGNORE_HELD_ITEM|IGNORE_USER_LOC_CHANGE|IGNORE_TARGET_LOC_CHANGE, victim, BUSY_ICON_DANGER, extra_checks = CALLBACK(xeno_owner, TYPE_PROC_REF(/mob, break_do_after_checks), list("health" = xeno_owner.health))))
 		return FALSE
-	succeed_activate()
 
-/datum/action/ability/activable/xeno/pincushion/use_ability(atom/victim)
 	var/turf/current_turf = get_turf(owner)
-	playsound(xeno_owner.loc, 'sound/bullets/spear_armor1.ogg', 25, 1)
+	playsound(xeno_owner.loc, 'sound/bullets/spear_armor1.ogg', 25, 1, MEDIUM_SOUND_RANGE)
 	xeno_owner.visible_message(span_warning("[xeno_owner] shoots a spike!"), span_xenonotice("We discharge a spinal spike from our body."))
 
-	var/obj/projectile/spine = new /obj/projectile(current_turf)
+	var/atom/movable/projectile/spine = new /atom/movable/projectile(current_turf)
 	spine.generate_bullet(/datum/ammo/xeno/spine)
 	spine.def_zone = xeno_owner.get_limbzone_target()
 	spine.fire_at(victim, xeno_owner, xeno_owner, range = 6, speed = 1)
-
+	succeed_activate()
 	add_cooldown()
+
 // ***************************************
 // *********** Dreadful Presence
 // ***************************************
@@ -97,13 +98,18 @@
 	keybinding_signals = list(
 		KEYBINDING_NORMAL = COMSIG_XENOABILITY_DREADFULPRESENCE,
 	)
+	/// Should it give a status effect that deals stamina damage instead? If so, how much stamina damage per second?
+	var/stamina_draining
 
 /datum/action/ability/xeno_action/dreadful_presence/action_activate()
 	var/obj/effect/overlay/dread/effect = new
 	owner.vis_contents += effect
 	for(var/mob/living/carbon/human/human in view(DREAD_RANGE, owner.loc))
 		to_chat(human, span_userdanger("An overwhelming sense of dread washes over you... You are temporarily slowed down!"))
-		human.set_timed_status_effect(6 SECONDS, /datum/status_effect/dread)
+		if(stamina_draining)
+			human.apply_status_effect(STATUS_EFFECT_DRAINING_DREAD, stamina_draining)
+		else
+			human.apply_status_effect(STATUS_EFFECT_DREAD)
 		addtimer(CALLBACK(human, TYPE_PROC_REF(/mob/living/carbon/human, emote), "scream"), rand(1,2))
 	addtimer(CALLBACK(src, PROC_REF(clear_effect), effect), 3 SECONDS)
 	add_cooldown()
@@ -159,21 +165,24 @@
 		return FALSE
 #endif
 
-	xeno_owner.face_atom(target_human)
-	xeno_owner.visible_message(target_human, span_danger("[xeno_owner] begins carving out, doing all sorts of horrible things to [target_human]!"))
-	if(!do_after(xeno_owner, 8 SECONDS, IGNORE_HELD_ITEM, target_human, BUSY_ICON_DANGER, extra_checks = CALLBACK(xeno_owner, TYPE_PROC_REF(/mob, break_do_after_checks), list("health" = xeno_owner.health))))
-		return FALSE
-	succeed_activate()
 
-/datum/action/ability/activable/xeno/refurbish_husk/use_ability(mob/living/carbon/human/victim)
+/datum/action/ability/activable/xeno/refurbish_husk/use_ability(atom/target)
+	var/mob/living/carbon/human/victim = target
+	xeno_owner.face_atom(victim)
+	xeno_owner.visible_message(victim, span_danger("[xeno_owner] begins carving out, doing all sorts of horrible things to [victim]!"))
+	if(!do_after(xeno_owner, 8 SECONDS, IGNORE_HELD_ITEM, victim, BUSY_ICON_DANGER, extra_checks = CALLBACK(xeno_owner, TYPE_PROC_REF(/mob, break_do_after_checks), list("health" = xeno_owner.health))))
+		return FALSE
+
 	var/turf/victim_turf = get_turf(victim)
 
 	ADD_TRAIT(victim, TRAIT_HOLLOW, TRAIT_GENERIC)
 	victim.spawn_gibs()
 	var/mob/living/carbon/xenomorph/puppet/puppet = new(victim_turf, owner)
+	puppet.name = victim.name
 	puppet.voice = victim.voice
 	add_puppet(puppet)
 	add_cooldown()
+	succeed_activate()
 
 /// Adds a puppet to our list
 /datum/action/ability/activable/xeno/refurbish_husk/proc/add_puppet(mob/living/carbon/xenomorph/puppet/new_puppet)
@@ -229,19 +238,19 @@
 			xeno_owner.balloon_alert(xeno_owner, "not adjacent!")
 		return FALSE
 
+/datum/action/ability/activable/xeno/puppet/use_ability(atom/target)
 	xeno_owner.face_atom(target)
 	//reverse gib here
 	xeno_owner.visible_message(span_warning("[xeno_owner] begins to vomit out biomass and skillfully sews various bits and pieces together!"))
 	if(!do_after(xeno_owner, 8 SECONDS, IGNORE_HELD_ITEM, target, BUSY_ICON_CLOCK, extra_checks = CALLBACK(xeno_owner, TYPE_PROC_REF(/mob, break_do_after_checks), list("health" = xeno_owner.health))))
 		return FALSE
 	xeno_owner.visible_message(span_warning("[xeno_owner] forms a repulsive puppet!"))
-	succeed_activate()
 
-/datum/action/ability/activable/xeno/puppet/use_ability(atom/target)
 	var/turf/target_turf = get_turf(target)
 
 	var/datum/action/ability/activable/xeno/refurbish_husk/huskaction = owner.actions_by_path[/datum/action/ability/activable/xeno/refurbish_husk]
 	huskaction.add_puppet(new /mob/living/carbon/xenomorph/puppet(target_turf, owner))
+	succeed_activate()
 	add_cooldown()
 
 // ***************************************
@@ -300,9 +309,7 @@
 	for(var/turf/acid_tile AS in RANGE_TURFS(2, our_turf))
 		if(!line_of_sight(our_turf,acid_tile) || isclosedturf(acid_tile))
 			continue
-		new /obj/effect/temp_visual/acid_splatter(acid_tile) //SFX
-		if(!locate(/obj/effect/xenomorph/spray) in acid_tile.contents)
-			new /obj/effect/xenomorph/spray(acid_tile, 12 SECONDS, 18)
+		xenomorph_spray(acid_tile, 12 SECONDS, 18, null, TRUE)
 // ***************************************
 // *********** Articulate
 // ***************************************
@@ -310,7 +317,7 @@
 	name = "Articulate"
 	action_icon_state = "mimicry"
 	action_icon = 'icons/Xeno/actions/puppeteer.dmi'
-	desc = "Takes direct control of a Puppet’s vocal chords. Allows you to speak directly through your puppet to the talls."
+	desc = "Takes direct control of a Puppet's vocal chords. Allows you to speak directly through your puppet to humans."
 	cooldown_duration = 10 SECONDS
 	target_flags = ABILITY_MOB_TARGET
 	///Whether we should cancel instead of doing the thing when activated
@@ -453,7 +460,7 @@
 	victim.balloon_alert(owner, "[choice]")
 	victim.apply_status_effect(effect_path, xeno_owner)
 	victim.med_hud_set_status()
-	playsound(get_turf(xeno_owner), SFX_ALIEN_DROOL, 25)
+	playsound(get_turf(xeno_owner), SFX_ALIEN_DROOL, 25, FALSE, MEDIUM_SOUND_RANGE)
 	add_cooldown()
 
 // ***************************************

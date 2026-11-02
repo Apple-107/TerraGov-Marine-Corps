@@ -1,13 +1,16 @@
 //click cooldowns, in tenths of a second, used for various combat actions
 #define CLICK_CD_FASTEST 1
 #define CLICK_CD_RAPID 2
+#define CLICK_CD_LOOK_UP 5
 #define CLICK_CD_RANGE 4
 #define CLICK_CD_CLICK_ABILITY 6
+#define CLICK_CD_UNARMED 7
 #define CLICK_CD_MELEE 8
 #define CLICK_CD_THROWING 4
 #define CLICK_CD_HANDCUFFED 10
 #define CLICK_CD_GRABBING 10
 #define CLICK_CD_RESIST 10
+#define CLICK_CD_MELEE_WEAPON_DEFAULT 11
 #define CLICK_CD_LONG 20
 #define CLICK_CD_BREAKOUT 100
 
@@ -48,7 +51,7 @@
 ///Ammo will pass through windows and has damage reduced by smokes with SMOKE_NERF_BEAM
 #define AMMO_ENERGY (1<<3)
 ///Ammo is more likely to continue past cover such as cades
-#define AMMO_SNIPER (1<<4)
+#define AMMO_BETTER_COVER_RNG (1<<4)
 ///Ammo will attempt to add firestacks and ignite a hit mob if it deals any damage. Armor applies, regardless of AMMO_IGNORE_ARMOR
 #define AMMO_INCENDIARY (1<<5)
 ///Ammo type entirely ignores xenos
@@ -73,6 +76,10 @@
 #define AMMO_PASS_THROUGH_MOB (1<<15)
 ///If the projectile ricochet and miss sound is pitched up
 #define AMMO_SOUND_PITCH (1<<16)
+///Is this projectile considered sniper ammo, used for the anti sniper stacking status effect
+#define AMMO_SNIPER (1<<17)
+///Ammo type entirely ignores xenos
+#define AMMO_SKIPS_ZOMBIE (1<<18)
 
 //Gun defines for gun related thing. More in the projectile folder.
 //gun_features_flags
@@ -134,6 +141,9 @@
 #define MAGAZINE_NOT_FABRICABLE (1<<4)
 ///ammo count shown on mag sprite
 #define MAGAZINE_SHOW_AMMO (1<<5)
+
+///Standard flamer burn duration in 2 second ticks
+#define FLAMER_STANDARD_BURN_DURATION 17
 
 //Slowdown from various armors.
 #define SHOES_SLOWDOWN -1.0			// How much shoes slow you down by default. Negative values speed you up

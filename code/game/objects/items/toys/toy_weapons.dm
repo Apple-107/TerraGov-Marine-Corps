@@ -17,7 +17,7 @@
 	equip_slot_flags = ITEM_SLOT_BELT
 	w_class = WEIGHT_CLASS_NORMAL
 
-	attack_verb = list("struck", "pistol whipped", "hit", "bashed")
+	attack_verb = list("strikes", "pistol whips", "hits", "bashes")
 	var/bullets = 7
 
 /obj/item/toy/gun/examine(mob/user)
@@ -50,12 +50,12 @@
 	if (flag)
 		return
 	if (src.bullets < 1)
-		user.show_message(span_warning(" *click* *click*"), 2)
-		playsound(user, 'sound/weapons/guns/fire/empty.ogg', 15, 1)
+		user.show_message(span_warning("*click* *click*"), 2)
+		playsound(user, 'sound/weapons/guns/fire/empty.ogg', 15, 1, SHORT_SOUND_RANGE)
 		return
-	playsound(user, 'sound/weapons/guns/fire/gunshot.ogg', 15, 1)
+	playsound(user, 'sound/weapons/guns/fire/gunshot.ogg', 15, 1, SHORT_SOUND_RANGE)
 	src.bullets--
-	visible_message(span_danger("[user] fires a cap gun at [target]!"), null, span_warning(" You hear a gunshot"))
+	visible_message(span_danger("[user] fires a cap gun at [target]!"), null, span_warning("You hear a gunshot"))
 
 /obj/item/toy/gun_ammo
 	name = "ammo-caps"
@@ -83,7 +83,7 @@
 	icon_state = "foamcrossbow"
 	worn_icon_state = "crossbow"
 	w_class = WEIGHT_CLASS_SMALL
-	attack_verb = list("attacked", "struck", "hit")
+	attack_verb = list("attacks", "strikes", "hits")
 	var/bullets = 5
 
 /obj/item/toy/crossbow/examine(mob/user)
@@ -114,7 +114,7 @@
 		bullets--
 		D.icon_state = "foamdart"
 		D.name = "foam dart"
-		playsound(user.loc, 'sound/items/syringeproj.ogg', 15, 1)
+		playsound(user.loc, 'sound/items/syringeproj.ogg', 15, 1, SHORT_SOUND_RANGE)
 
 		for(var/i=0, i<6, i++)
 			if (D)
@@ -157,7 +157,7 @@
 		visible_message(span_danger("[user] casually lines up a shot with [M]'s head and pulls the trigger!"), null, span_warning("You hear the sound of foam against skull"))
 		visible_message(span_warning("[M] was hit in the head by the foam dart!"))
 
-		playsound(user.loc, 'sound/items/syringeproj.ogg', 15, 1)
+		playsound(user.loc, 'sound/items/syringeproj.ogg', 15, 1, SHORT_SOUND_RANGE)
 		new /obj/item/toy/crossbow_ammo(M.loc)
 		src.bullets--
 	else if(M.lying_angle && !bullets && isliving(M))
@@ -191,19 +191,19 @@
 	icon = 'icons/obj/items/weapons/energy.dmi'
 	icon_state = "sword"
 	w_class = WEIGHT_CLASS_SMALL
-	attack_verb = list("attacked", "struck", "hit")
+	attack_verb = list("attacks", "strikes", "hits")
 
 /obj/item/toy/sword/attack_self(mob/user as mob)
 	src.active = !( src.active )
 	if (src.active)
 		to_chat(user, span_notice("You extend the plastic blade with a quick flick of your wrist."))
-		playsound(user, 'sound/weapons/saberon.ogg', 15, 1)
+		playsound(user, 'sound/weapons/saberon.ogg', 15, 1, SHORT_SOUND_RANGE)
 		src.icon_state = "swordblue"
 		src.worn_icon_state = "swordblue"
 		src.w_class = WEIGHT_CLASS_BULKY
 	else
 		to_chat(user, span_notice("You push the plastic blade back down into the handle."))
-		playsound(user, 'sound/weapons/saberoff.ogg', 15, 1)
+		playsound(user, 'sound/weapons/saberoff.ogg', 15, 1, SHORT_SOUND_RANGE)
 		src.icon_state = "sword"
 		src.w_class = WEIGHT_CLASS_SMALL
 
@@ -224,6 +224,6 @@
 	force = 5
 	throwforce = 5
 	w_class = WEIGHT_CLASS_NORMAL
-	attack_verb = list("attacked", "slashed", "stabbed", "sliced")
+	attack_verb = list("attacks", "slashes", "stabs", "slices")
 
 

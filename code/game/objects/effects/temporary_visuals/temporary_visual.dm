@@ -56,15 +56,15 @@
 /obj/effect/temp_visual/xenomorph/xeno_tracker_target/Initialize(mapload, atom/target)
 	. = ..()
 	prepare_huds()
-	for(var/datum/atom_hud/xeno_tactical/xeno_tac_hud in GLOB.huds) //Add to the xeno tachud
-		xeno_tac_hud.add_to_hud(src)
+	var/datum/atom_hud/xeno_tactical/xeno_tac_hud = GLOB.huds[DATA_HUD_XENO_TACTICAL] //Add to the xeno tachud
+	xeno_tac_hud.add_to_hud(src)
 	hud_set_xeno_tracker_target(target)
 
 /obj/effect/temp_visual/xenomorph/xeno_tracker_target/Destroy()
 	if(tracker_target && holder) //Check to avoid runtimes
 		tracker_target.overlays -= holder //remove the overlay
-	for(var/datum/atom_hud/xeno_tactical/xeno_tac_hud in GLOB.huds)
-		xeno_tac_hud.remove_from_hud(src)
+	var/datum/atom_hud/xeno_tactical/xeno_tac_hud = GLOB.huds[DATA_HUD_XENO_TACTICAL]
+	xeno_tac_hud.remove_from_hud(src)
 	tracker_target = null //null the target var
 	QDEL_NULL(holder) //remove the holder and null the var
 	return ..()
@@ -127,7 +127,7 @@ GLOBAL_DATUM_INIT(flare_particles, /particles/flare_smoke, new)
 	pixel_y = -120
 	pixel_z = -480
 
-/obj/effect/temp_visual/dropship_flyby/Initialize()
+/obj/effect/temp_visual/dropship_flyby/Initialize(mapload)
 	. = ..()
 	animate(src, pixel_z = 960, time = 3 SECONDS)
 
@@ -139,7 +139,7 @@ GLOBAL_DATUM_INIT(flare_particles, /particles/flare_smoke, new)
 	icon_state = "oppose_shatter"
 	name = "veined terrain"
 	desc = "blood rushes below the ground, forcing it upwards."
-	layer = PODDOOR_OPEN_LAYER
+	layer = BLASTDOOR_LAYER
 	pixel_x = -32
 	pixel_y = -32
 	duration = 3 SECONDS
@@ -221,3 +221,20 @@ GLOBAL_DATUM_INIT(flare_particles, /particles/flare_smoke, new)
 /obj/effect/temp_visual/gib_particles/proc/stop_spawning()
 	blood.particles.count = 0
 	gib_splatter.particles.count = 0
+
+/obj/effect/temp_visual/leap_dust
+	name = "dust"
+	desc = "It's just a dust cloud!"
+	icon = 'icons/effects/64x64.dmi'
+	icon_state = "leap_cloud"
+	layer = BELOW_MOB_LAYER
+	plane = GAME_PLANE
+	pixel_x = -16
+	pixel_y = -16
+	duration = 1 SECONDS
+
+/obj/effect/temp_visual/leap_dust/small
+
+/obj/effect/temp_visual/leap_dust/small/Initialize(mapload)
+	. = ..()
+	transform = transform.Scale(0.5)

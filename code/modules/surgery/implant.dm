@@ -37,7 +37,7 @@
 
 	else if(affected.hidden)
 		user.visible_message(span_notice("[user] takes something out of incision on [target]'s [affected.display_name] with \the [tool]."), \
-		span_notice(" You take something out of incision on [target]'s [affected.display_name]s with \the [tool]."))
+		span_notice("You take something out of incision on [target]'s [affected.display_name]s with \the [tool]."))
 		target.balloon_alert_to_viewers("Shrapnel found")
 		affected.hidden.loc = get_turf(target)
 		affected.hidden.update_icon()
@@ -62,7 +62,7 @@
 			if(istype(I,/obj/item/implant))
 				var/obj/item/implant/imp = I
 				user.visible_message(span_warning("Something beeps inside [target]'s [affected.display_name]!"))
-				playsound(imp.loc, 'sound/items/countdown.ogg', 25, 1)
+				playsound(imp.loc, 'sound/items/countdown.ogg', 25, 1, MEDIUM_SOUND_RANGE)
 				addtimer(CALLBACK(imp, TYPE_PROC_REF(/obj/item/implant, activate)), 25)
 	target.updatehealth()
 	affected.update_wounds()

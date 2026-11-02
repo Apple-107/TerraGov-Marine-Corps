@@ -123,6 +123,8 @@
 	if(.)
 		return
 	var/mob/M = user.mob
+	if(isxeno(M) && !(user.prefs?.toggles_gameplay & TOGGLE_XENO_MOVE_INTENT_KEYBIND))
+		return
 	M.toggle_move_intent()
 	return TRUE
 
@@ -248,7 +250,7 @@
 	if (.)
 		return
 	user.mob.do_self_harm = !user.mob.do_self_harm
-	user.mob.balloon_alert(user.mob, "You can [user.mob.do_self_harm ? "now" : "no longer"] hit yourself")
+	user.mob.balloon_alert(user.mob, "self-harm [user.mob.do_self_harm ? "active" : "inactive"]")
 
 /datum/keybinding/mob/interactive_emote
 	name = "interactive_emote"
@@ -297,3 +299,17 @@
 	if(.)
 		return
 	user.movement_locked = FALSE
+
+/datum/keybinding/mob/toggle_clickdrag
+	hotkey_keys = list("")
+	name = "toggle_clickdrag"
+	full_name = "Toggle Click-Drag"
+	description = "Toggles click-dragging on and off."
+	keybind_signal = COMSIG_KB_MOB_TOGGLE_CLICKDRAG
+
+/datum/keybinding/mob/toggle_clickdrag/down(client/user)
+	. = ..()
+	if(.)
+		return
+	user.prefs.toggles_gameplay ^= TOGGLE_CLICKDRAG
+	user.mob.balloon_alert(user.mob, "click-drag [user.prefs.toggles_gameplay & TOGGLE_CLICKDRAG ? "inactive" : "active"]")

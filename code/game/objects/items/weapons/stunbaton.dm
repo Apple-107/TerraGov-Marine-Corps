@@ -10,7 +10,7 @@
 	edge = 0
 	throwforce = 7
 	w_class = WEIGHT_CLASS_NORMAL
-	attack_verb = list("beaten")
+	attack_verb = list("beats")
 	req_one_access = list(ACCESS_MARINE_BRIG, ACCESS_MARINE_ARMORY, ACCESS_MARINE_CAPTAIN, ACCESS_NT_CORPORATE, ACCESS_NT_PMC_GREEN)
 	var/stunforce = 10
 	var/agonyforce = 80
@@ -71,7 +71,7 @@
 	if(istype(H))
 		var/obj/item/card/id/I = H.wear_id
 		if(!istype(I) || !check_access(I))
-			H.visible_message(span_notice(" [src] beeeps as [H] picks it up"), span_danger("WARNING: Unauthorized user detected. Denying access..."))
+			H.visible_message(span_notice("[src] beeeps as [H] picks it up"), span_danger("WARNING: Unauthorized user detected. Denying access..."))
 			H.Paralyze(40 SECONDS)
 			H.visible_message(span_warning("[src] beeps and sends a shock through [H]'s body!"))
 			deductcharge(hitcost)
@@ -134,7 +134,7 @@
 		to_chat(user, span_warning("You don't seem to know how to use [src]..."))
 		return
 
-	var/agony_applied = agonyforce
+	var/stamloss_applied = agonyforce
 	var/stun_applied = stunforce
 	var/mob/living/L = M
 
@@ -142,7 +142,7 @@
 	if(user.a_intent == INTENT_HARM)
 		if (!..())	//item/attack() does it's own messaging and logs
 			return 0	// item/attack() will return 1 if they hit, 0 if they missed.
-		agony_applied *= 0.5	//whacking someone causes a much poorer contact than prodding them.
+		stamloss_applied *= 0.5	//whacking someone causes a much poorer contact than prodding them.
 		stun_applied *= 0.5
 		//we can't really extract the actual hit zone from ..(), unfortunately. Just act like they attacked the area they intended to.
 	else
@@ -173,7 +173,7 @@
 
 	//stun effects
 	if(!HAS_TRAIT(L, TRAIT_BATONIMMUNE))
-		L.apply_effects(stun = stun_applied, stutter = agony_applied * 0.1, eyeblur = agony_applied * 0.1, agony = agony_applied)
+		L.apply_effects(stun = stun_applied, stutter = stamloss_applied * 0.1, eye_blur = stamloss_applied * 0.1, stamloss = stamloss_applied)
 		L.ParalyzeNoChain(8 SECONDS)
 
 	playsound(loc, 'sound/weapons/egloves.ogg', 25, 1, 6)
@@ -199,7 +199,7 @@
 	stunforce = 0
 	agonyforce = 60	//same force as a stunbaton, but uses way more charge.
 	hitcost = 2500
-	attack_verb = list("poked")
+	attack_verb = list("pokes")
 	equip_slot_flags = NONE
 	has_user_lock = FALSE
 
@@ -230,7 +230,7 @@
 	if(charges > 0)
 		status = !status
 		to_chat(user, span_notice("\The [src] is now [status ? "on" : "off"]."))
-		playsound(loc, SFX_SPARKS, 15, 1)
+		playsound(loc, SFX_SPARKS, 15, 1, SHORT_SOUND_RANGE)
 		update_icon()
 	else
 		status = 0
@@ -252,7 +252,7 @@
 
 		log_combat(user, L, "stunned", src)
 
-		playsound(loc, 'sound/weapons/egloves.ogg', 25, 1)
+		playsound(loc, 'sound/weapons/egloves.ogg', 25, 1, MEDIUM_SOUND_RANGE)
 		if(charges < 1)
 			status = 0
 			update_icon()

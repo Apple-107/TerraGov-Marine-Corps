@@ -28,22 +28,21 @@
 	html_description = {"
 		<b>Difficulty</b>: Hard<br /><br />
 		<b>You answer to</b> SOM High Command<br /><br />
-		<b>Unlock Requirement</b>: Starting Role<br /><br />
+		<b>Unlock Requirement</b>: 15 hours playtime (any role)<br /><br />
 		<b>Gamemode Availability</b>: Campaign<br /><br /><br />
 		<b>Duty</b>: Lead the SOM forces and complete your mission. Support the marines and communicate with your command staff, execute orders.
 	"}
 	minimap_icon = "captain" //placeholder
 
-/datum/job/som/command/commander/radio_help_message(mob/M)
+/datum/job/som/command/commander/get_spawn_message_information(mob/M)
 	. = ..()
-	to_chat(M, {"As the senior officer in command of this SOM battallion you are held by higher standard and are expected to act competently.
+	. += separator_hr("[span_role_header("<b>[title] Information</b>")]")
+	. += {"As the senior officer in command of this SOM battalion you are held by higher standard and are expected to act competently.
 Your primary task is to command and support the SOM marines under your command from the command center in [SSmapping.configs[SHIP_MAP].map_name].
 Your first order of business should be briefing the marines on the mission they are about to undertake, and providing them with all the required attrition and asset support they need to succeed.
 You should not be voluntarily leaving your base under any circumstances. You are a senior officer, not a field officer.
-If you require any help, use <b>mentorhelp</b> to ask mentors about what you're supposed to do.
-Godspeed, commander! And remember, you are not above the law."})
-
-
+If you require any help, use <b>Mentorhelp</b> to ask mentors about what you're supposed to do.
+Godspeed, Commander! And remember, you are not above the law."}
 
 /datum/job/som/command/commander/after_spawn(mob/living/new_mob, mob/user, latejoin)
 	. = ..()
@@ -81,18 +80,19 @@ Godspeed, commander! And remember, you are not above the law."})
 	html_description = {"
 		<b>Difficulty</b>:Very Hard<br /><br />
 		<b>You answer to the</b> commanding officer<br /><br />
-		<b>Unlock Requirement</b>: Starting Role<br /><br />
+		<b>Unlock Requirement</b>: 10 hours playtime (any role)<br /><br />
 		<b>Gamemode Availability</b>: Campaign<br /><br /><br />
 		<b>Duty</b>: Lead your platoon on the field. Take advantage of the military staff and assets you will need for the mission, keep good relations between command and the marines. Assist your commander if available.
 	"}
 	minimap_icon = "som_fieldcommander"
 
-/datum/job/som/command/fieldcommander/radio_help_message(mob/M)
+/datum/job/som/command/fieldcommander/get_spawn_message_information(mob/M)
 	. = ..()
-	to_chat(M, {"You are charged with overseeing the operation on the ground, and are the highest-ranked deployed SOM marine.
+	. += separator_hr("[span_role_header("<b>[title] Information</b>")]")
+	. += {"You are charged with overseeing the operation on the ground, and are the highest-ranked deployed SOM marine.
 Your duties are to ensure the SOM are following orders and achieving objectives.
 Lead by example and support those under your command.
-Make the SOM proud!"})
+Make the SOM proud!"}
 
 /datum/job/som/command/fieldcommander/after_spawn(mob/living/carbon/new_mob, mob/user, latejoin = FALSE)
 	. = ..()
@@ -133,17 +133,18 @@ Make the SOM proud!"})
 	html_description = {"
 		<b>Difficulty</b>: Medium<br /><br />
 		<b>You answer to the</b> Captain<br /><br />
-		<b>Unlock Requirement</b>: Starting Role<br /><br />
+		<b>Unlock Requirement</b>: 3 hours playtime (any role)<br /><br />
 		<b>Gamemode Availability</b>: Campaign<br /><br /><br />
 		<b>Duty</b>: Take charge of one of the four squads, be their eyes and ears providing intel and additional shipside support via Orbital Bombardments.
 	"}
 
 	minimap_icon = "staffofficer"
 
-/datum/job/som/command/staffofficer/radio_help_message(mob/M)
+/datum/job/som/command/staffofficer/get_spawn_message_information(mob/M)
 	. = ..()
-	to_chat(M, {"Your job is to monitor the SOM forces on the ground, man the CIC, and listen to your superior officers.
-You are in charge of logistics and the overwatch system. You are also in line to take command after the senior officer."})
+	. += separator_hr("[span_role_header("<b>[title] Information</b>")]")
+	. += {"Your job is to monitor the SOM forces on the ground, man the CIC, and listen to your superior officers.
+You are in charge of logistics and the overwatch system. You are also in line to take command after the senior officer."}
 
 /datum/job/som/command/staffofficer/after_spawn(mob/living/carbon/new_mob, mob/user, latejoin = FALSE)
 	. = ..()
@@ -182,7 +183,7 @@ You are in charge of logistics and the overwatch system. You are also in line to
 	html_description = {"
 		<b>Difficulty</b>: Medium<br /><br />
 		<b>You answer to the</b> acting Command Staff<br /><br />
-		<b>Unlock Requirement</b>: Starting Role<br /><br />
+		<b>Unlock Requirement</b>: 3 hours playtime (any role)<br /><br />
 		<b>Gamemode Availability</b>: Campaign<br /><br /><br />
 		<b>Duty</b>: Choose between the Condor, a modular attack aircraft that provides close air support with a variety of weapons ranging from the inbuilt gatling to wing mounted rockets; or the Tadpole, a versatile dropship capable of fulfilling roles ranging from ambulance to mobile bunker.
 	"}
@@ -208,14 +209,12 @@ You are in charge of logistics and the overwatch system. You are also in line to
 		if(30001 to INFINITY) // 500 hrs
 			new_human.wear_id.paygrade = "SOM_W6"
 
-/datum/job/som/command/pilot/radio_help_message(mob/M)
+/datum/job/som/command/pilot/get_spawn_message_information(mob/M)
 	. = ..()
-	to_chat(M, {"Your job is to support marines with either close air support via the Condor, or mobile dropship support with the Tadpole.
+	. += separator_hr("[span_role_header("<b>[title] Information</b>")]")
+	. += {"Your job is to support marines with either close air support via the Condor, or mobile dropship support with the Tadpole.\
 While you are in charge of all aerial crafts the Alamo does not require supervision outside of turning automatic mode on or off at crucial times, and you are expected to choose between the Condor and Tadpole.
-Though you are a warrant officer, your authority is limited to the dropship and your chosen aerial craft, where you have authority over the enlisted personnel.
-"})
-
-
+Though you are a warrant officer, your authority is limited to the dropship and your chosen aerial craft, where you have authority over the enlisted personnel."}
 
 //Mech pilot
 /datum/job/som/command/mech_pilot
@@ -236,16 +235,17 @@ Though you are a warrant officer, your authority is limited to the dropship and 
 	html_description = {"
 		<b>Difficulty</b>:Very Hard<br /><br />
 		<b>You answer to the</b> acting Command Staff<br /><br />
-		<b>Unlock Requirement</b>: Starting Role<br /><br />
+		<b>Unlock Requirement</b>: 15 hours playtime (any role)<br /><br />
 		<b>Gamemode Availability</b>: Campaign<br /><br /><br />
 		<b>Duty</b>: Act as the spearhead of the operation
 	"}
 	minimap_icon = "mech_pilot"
 
-/datum/job/som/command/mech_pilot/radio_help_message(mob/M)
+/datum/job/som/command/mech_pilot/get_spawn_message_information(mob/M)
 	. = ..()
-	to_chat(M, {"\nYou are the operator of a very expensive and valuable Mech, and are trained and expected to use it in the field of combat.
-You can serve your Division in a variety of roles, so choose carefully."})
+	. += separator_hr("[span_role_header("<b>[title] Information</b>")]")
+	. += {"You are the operator of a very expensive and valuable Mech, and are trained and expected to use it in the field of combat.
+You can serve your Division in a variety of roles, so choose carefully."}
 
 /datum/job/som/command/mech_pilot/after_spawn(mob/living/carbon/new_mob, mob/user, latejoin = FALSE)
 	. = ..()
@@ -293,7 +293,7 @@ You can serve your Division in a variety of roles, so choose carefully."})
 	html_description = {"
 		<b>Difficulty</b>: Hard<br /><br />
 		<b>You answer to the</b> acting Command Staff<br /><br />
-		<b>Unlock Requirement</b>: Starting Role<br /><br />
+		<b>Unlock Requirement</b>: 10 hours playtime (any role)<br /><br />
 		<b>Gamemode Availability</b>: Campaign<br /><br /><br />
 		<b>Duty</b>: Supervise the engineers and technicians on duty. Overview the ship’s engine. Teach what’s right and what’s wrong about engineering, cut corners and find places in any FOB that can easily be destroyed.
 	"}
@@ -319,13 +319,12 @@ You can serve your Division in a variety of roles, so choose carefully."})
 		if(30001 to INFINITY) // 500 hrs
 			new_human.wear_id.paygrade = "SOM_W6"
 
-/datum/job/som/engineering/chief/radio_help_message(mob/M)
+/datum/job/som/engineering/chief/get_spawn_message_information(mob/M)
 	. = ..()
-	to_chat(M, {"Your job is to maintain the ship's engine and keep everything running.
-If you have no idea how to set up the engine, or it's your first time, <b>mentorhelp</b> so that a mentor can assist you.
-You are also next in the chain of command, should the bridge crew fall in the line of duty."})
-
-
+	. += separator_hr("[span_role_header("<b>[title] Information</b>")]")
+	. += {"Your job is to maintain the ship's engine and keep everything running.
+If you have no idea how to set up the engine, or it's your first time, <b>Mentorhelp</b> so that a Mentor can assist you.
+You are also next in the chain of command, should the bridge crew fall in the line of duty."}
 
 //Ship Engineer
 /datum/job/som/engineering/tech
@@ -369,12 +368,10 @@ You are also next in the chain of command, should the bridge crew fall in the li
 		if(30001 to INFINITY) // 500 hrs
 			new_human.wear_id.paygrade = "SOM_S1"
 
-/datum/job/som/engineering/tech/radio_help_message(mob/M)
+/datum/job/som/engineering/tech/get_spawn_message_information(mob/M)
 	. = ..()
-	to_chat(M, {"Your job is to make sure the base is operational, you should firstly focus on manning the
-requisitions line and later on to be ready to send supplies for marines who are groundside."})
-
-
+	. += separator_hr("[span_role_header("<b>[title] Information</b>")]")
+	. += "Your job is to make sure the base is operational, you should firstly focus on manning the requisitions line and later on to be ready to send supplies for marines who are groundside."
 
 /datum/job/som/requisitions
 	job_category = JOB_CAT_REQUISITIONS
@@ -402,7 +399,7 @@ requisitions line and later on to be ready to send supplies for marines who are 
 	html_description = {"
 		<b>Difficulty</b>: Medium<br /><br />
 		<b>You answer to the</b> acting Command Staff<br /><br />
-		<b>Unlock Requirement</b>: Starting Role<br /><br />
+		<b>Unlock Requirement</b>: 1 hour playtime (any role)<br /><br />
 		<b>Gamemode Availability</b>: Campaign<br /><br /><br />
 		Supply the SOM with deluxe equipment to ensure success.
 	"}
@@ -428,13 +425,12 @@ requisitions line and later on to be ready to send supplies for marines who are 
 		if(30001 to INFINITY) // 500 hrs
 			new_human.wear_id.paygrade = "SOM_W5"
 
-/datum/job/som/requisitions/officer/radio_help_message(mob/M)
+/datum/job/som/requisitions/officer/get_spawn_message_information(mob/M)
 	. = ..()
-	to_chat(M, {"Your job is to dispense supplies to the SOM.
+	. += separator_hr("[span_role_header("<b>[title] Information</b>")]")
+	. += {"Your job is to dispense supplies to the SOM.
 While you may request paperwork for supplies, do not go out of your way to screw with marines, unless you want to get deposed.
-A happy base is a well-functioning base."})
-
-
+A happy base is a well-functioning base."}
 
 /datum/job/som/medical
 	job_category = JOB_CAT_MEDICAL
@@ -461,17 +457,18 @@ A happy base is a well-functioning base."})
 	html_description = {"
 		<b>Difficulty</b>: Hard<br /><br />
 		<b>You answer to the</b> acting Command Staff<br /><br />
-		<b>Unlock Requirement</b>: Starting Role<br /><br />
+		<b>Unlock Requirement</b>: 10 hours playtime (any role)<br /><br />
 		<b>Gamemode Availability</b>: Campaign<br /><br /><br />
 		<b>Duty</b>: Communicate and lead your fellow medical staff (if available), supervise the medical department. Coordinate and teach fellow medical staff and corpsmen what they’re doing for treating an injury. Be the sole doctor in the Canterbury.
 	"}
 	minimap_icon = "chief_medical"
 
-/datum/job/som/medical/professor/radio_help_message(mob/M)
+/datum/job/som/medical/professor/get_spawn_message_information(mob/M)
 	. = ..()
-	to_chat(M, {"You are the chief medical officer stationed behind the frontlines and supervisor to the medical department.
+	. += separator_hr("[span_role_header("<b>[title] Information</b>")]")
+	. += {"You are the chief medical officer stationed behind the frontlines and supervisor to the medical department.
 You have final authority over the medical department, medications, and treatments.
-Make sure that the doctors and nurses are doing their jobs and keeping the SOM healthy and strong."})
+Make sure that the doctors and nurses are doing their jobs and keeping the SOM healthy and strong."}
 
 /datum/job/som/medical/professor/after_spawn(mob/living/carbon/new_mob, mob/user, latejoin = FALSE)
 	. = ..()
@@ -524,14 +521,12 @@ Make sure that the doctors and nurses are doing their jobs and keeping the SOM h
 		if(3001 to INFINITY) // 50 hrs
 			new_human.wear_id.paygrade = "MD"
 
-/datum/job/som/medical/medicalofficer/radio_help_message(mob/M)
+/datum/job/som/medical/medicalofficer/get_spawn_message_information(mob/M)
 	. = ..()
-	to_chat(M, {"You are a SOM medical doctor stationed behind the frontlines.
+	. += separator_hr("[span_role_header("<b>[title] Information</b>")]")
+	. += {"You are a SOM medical doctor stationed behind the frontlines.
 You are tasked with keeping the SOM healthy and strong, usually in the form of surgery.
-You are also an expert when it comes to medication and treatment. If you do not know what you are doing, <b>mentorhelp</b> so a mentor can assist you."})
-
-
-
+You are also an expert when it comes to medication and treatment. If you do not know what you are doing, <b>mentorhelp</b> so a mentor can assist you."}
 
 /datum/job/som/civilian
 	job_category = JOB_CAT_CIVILIAN
@@ -569,8 +564,9 @@ You are also an expert when it comes to medication and treatment. If you do not 
 		if(3001 to INFINITY) // 50 hrs
 			new_human.wear_id.paygrade = "SOM_E2"
 
-/datum/job/som/civilian/chef/radio_help_message(mob/M)
+/datum/job/som/civilian/chef/get_spawn_message_information(mob/M)
 	. = ..()
-	to_chat(M, {"You are a chef stationed behind the frontlines.
+	. += separator_hr("[span_role_header("<b>[title] Information</b>")]")
+	. += {"You are a chef stationed behind the frontlines.
 You are tasked with keeping the SOM well fed and happy, usually in the form of delicious food.
-You are also an expert when it comes to botany and hydroponics. If you do not know what you are doing, <b>mentorhelp</b> so a mentor can assist you."})
+You are also an expert when it comes to botany and hydroponics. If you do not know what you are doing, <b>mentorhelp</b> so a mentor can assist you."}

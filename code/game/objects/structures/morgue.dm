@@ -7,6 +7,7 @@
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "morgue1"
 	dir = EAST
+	obj_flags = parent_type::obj_flags|BLOCK_Z_OUT_DOWN|BLOCK_Z_IN_UP
 	density = TRUE
 	var/obj/structure/morgue_tray/connected = null
 	var/morgue_type = "morgue"
@@ -82,7 +83,7 @@
 			connected.loc = src
 			return
 	morgue_open = !morgue_open
-	playsound(loc, 'sound/items/deconstruct.ogg', 25, 1)
+	playsound(loc, 'sound/items/deconstruct.ogg', 25, 1, MEDIUM_SOUND_RANGE)
 	update_icon()
 
 
@@ -194,9 +195,9 @@
 		return
 
 	if(length(contents) <= 1) //1 because the tray is inside.
-		visible_message(span_warning(" You hear a hollow crackle."))
+		visible_message(span_warning("You hear a hollow crackle."))
 	else
-		visible_message(span_warning(" You hear a roar as the crematorium activates."))
+		visible_message(span_warning("You hear a roar as the crematorium activates."))
 
 		cremating = 1
 
@@ -222,7 +223,7 @@
 		sleep(3 SECONDS)
 		cremating = 0
 		update_icon()
-		playsound(src.loc, 'sound/machines/ding.ogg', 25, 1)
+		playsound(src.loc, 'sound/machines/ding.ogg', 25, 1, MEDIUM_SOUND_RANGE)
 
 
 /*

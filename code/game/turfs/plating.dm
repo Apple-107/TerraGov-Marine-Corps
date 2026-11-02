@@ -23,8 +23,8 @@
 	if(!burnt && prob(5))
 		burn_tile()
 
-/turf/open/floor/plating/welder_act(mob/living/user, obj/item/I)
-	var/obj/item/tool/weldingtool/welder = I
+/turf/open/floor/plating/welder_act(mob/user, obj/item/tool)
+	var/obj/item/tool/weldingtool/welder = tool
 
 	if(!broken && !burnt)
 		return
@@ -33,7 +33,7 @@
 		return
 
 	to_chat(user, span_warning("You fix some dents on the broken plating."))
-	playsound(src, 'sound/items/welder.ogg', 25, 1)
+	tool.play_tool_sound(src)
 	burnt = FALSE
 	broken = FALSE
 	update_icon()
@@ -48,18 +48,19 @@
 	icon_state = "plating"
 	name = "airless plating"
 
-/turf/open/floor/plating/fake_space
+/turf/open/floor/plating/fake_space //todo: kill mappers that use dodgy fake tiles that are basically just varedits
 	icon = 'icons/turf/space.dmi'
 	name = "\proper shielded space"
 	icon_state = "0"
 	plane = PLANE_SPACE
+	hull_floor = TRUE
 
 /turf/open/floor/plating/icefloor
 	icon_state = "plating"
 	name = "ice colony plating"
 
 
-/turf/open/floor/plating/icefloor/New()
+/turf/open/floor/plating/icefloor/Initialize(mapload)
 	. = ..()
 	name = "plating"
 
@@ -90,7 +91,7 @@
 
 /turf/open/floor/plating/plating_catwalk/proc/update_turf_overlay()
 	var/image/I = image(icon, src, "catwalk", CATWALK_LAYER)
-	I.plane = FLOOR_PLANE
+	SET_PLANE_EXPLICIT(I, FLOOR_PLANE, src)
 	if(covered)
 		overlays += I
 	else
@@ -102,45 +103,37 @@
 	. = ..()
 	if(.)
 		return
-	if(iscrowbar(I))
-		if(covered)
-			var/obj/item/stack/catwalk/R = new(user.loc)
-			R.add_to_stacks(user)
-			covered = FALSE
-			update_turf_overlay()
-			return
-	if(istype(I, /obj/item/stack/catwalk))
-		if(!covered)
-			var/obj/item/stack/catwalk/E = I
-			E.use(1)
-			covered = TRUE
-			update_turf_overlay()
-			return
+	if(!istype(I, /obj/item/stack/catwalk))
+		return
+	if(covered)
+		return
+	var/obj/item/stack/catwalk/E = I
+	E.use(1)
+	covered = TRUE
+	update_turf_overlay()
+	return
+
+/turf/open/floor/plating/plating_catwalk/crowbar_act(mob/user, obj/item/tool)
+	if(!covered)
+		return FALSE
+	tool.play_tool_sound(src, 80)
+	var/obj/item/stack/catwalk/catwalk = new(user.loc)
+	catwalk.add_to_stacks(user)
+	covered = FALSE
+	update_turf_overlay()
+	return TRUE
 
 /turf/open/floor/plating/plating_catwalk/prison
 	icon = 'icons/turf/prison.dmi'
 
-
-
-/turf/open/floor/plating/ironsand/New()
-	. = ..()
+/turf/open/floor/plating/ironsand
 	name = "Iron Sand"
+/turf/open/floor/plating/plating_catwalk/prison/alt
+	icon_state = "plating_catwalk_alt"
+
+/turf/open/floor/plating/ironsand/Initialize(mapload)
+	. = ..()
 	icon_state = "ironsand[rand(1,15)]"
-
-
-
-/turf/open/floor/plating/catwalk
-	icon = 'icons/turf/catwalks.dmi'
-	icon_state = "catwalk0"
-	name = "catwalk"
-	desc = "Cats really don't like these things."
-	shoefootstep = FOOTSTEP_CATWALK
-	barefootstep = FOOTSTEP_CATWALK
-	mediumxenofootstep = FOOTSTEP_CATWALK
-	layer = CATWALK_LAYER
-
-/turf/open/floor/plating/catwalk/ex_act(severity)
-	return
 
 /turf/open/floor/plating/warning
 	icon_state = "warnplate"

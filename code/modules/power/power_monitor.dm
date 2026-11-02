@@ -41,8 +41,8 @@
 		return
 
 	var/t
-	t += "<BR><HR><A href='?src=[text_ref(src)];update=1'>Refresh</A>"
-	t += "<BR><HR><A href='?src=[text_ref(src)];close=1'>Close</A>"
+	t += "<BR><HR><A href='byond://?src=[text_ref(src)];update=1'>Refresh</A>"
+	t += "<BR><HR><A href='byond://?src=[text_ref(src)];close=1'>Close</A>"
 
 	if(!powernet)
 		t += span_warning(" No connection")
@@ -100,7 +100,7 @@
 		return
 	if(machine_stat & (BROKEN|DISABLED|NOPOWER))
 		return
-	. += emissive_appearance(icon, screen_overlay, alpha = src.alpha)
+	. += emissive_appearance(icon, screen_overlay, src, alpha = src.alpha)
 	. += mutable_appearance(icon, screen_overlay, alpha = src.alpha)
 
 //copied from computer.dm
@@ -110,9 +110,8 @@
 		return
 
 	if(isscrewdriver(I) && circuit)
-		playsound(loc, 'sound/items/screwdriver.ogg', 25, 1)
-		if(!do_after(user, 20, NONE, src, BUSY_ICON_BUILD))
-			return
+		if(!I.use_tool(src, user, 2 SECONDS, user_display = BUSY_ICON_BUILD))
+			return TRUE
 
 		var/obj/structure/computerframe/A = new(loc)
 		var/obj/item/circuitboard/computer/M = new circuit(A)

@@ -24,6 +24,11 @@
 /obj/structure/showcase/six
 	icon_state = "showcase_6"
 
+/obj/structure/showcase/seven
+	icon = 'icons/obj/vehicles_2x1.dmi'
+	icon_state = "bike"
+	desc = "A beautiful ural motorcycle that have seen wear and tear but looked after and taken care of with much love. You see a TerraGov Marine corp logo decal on it with a R-44 combat revolver sticker next to it."
+
 /obj/structure/showcase/coinpress
 	icon_state = "coinpress0"
 
@@ -51,7 +56,7 @@
 	icon_state = "monorail"
 	density = FALSE
 	anchored = TRUE
-	layer = ATMOS_PIPE_LAYER + 0.01
+	layer = LOW_OBJ_LAYER
 
 /obj/structure/mopbucket
 	name = "mop bucket"
@@ -83,7 +88,7 @@
 
 		reagents.trans_to(I, 5)
 		to_chat(user, span_notice("You wet [I] in [src]."))
-		playsound(loc, 'sound/effects/slosh.ogg', 25, 1)
+		playsound(loc, 'sound/effects/slosh.ogg', 25, 1, MEDIUM_SOUND_RANGE)
 
 /obj/structure/shipmast
 	name = "Ships Mast"
@@ -216,14 +221,24 @@
 
 
 
-//stairs
-
+/**
+ * TODO FIXME FIX ME ETC FUCK KNOWS
+ * So guess what stairs are super fucked
+ * Instead of doing something sane like right and left handrail variants cm/bay lumped everything into
+ * ONE ICONSTATE FOR N/S AND ONE FOR E/W
+ * WHY
+ * WHAT IS WRONG WITH YOU
+ * WE USE DIRS FOR SHIT LIKE STAIRS THAT ACTUALLY MOVE YOU
+ * FIX THIS SHIT FUCKING PLEASE USE THE UPDATEPATHS TOOL I HAVE FIXED rampbottom FOR YOU BECAUSE OTHERWISE MULTIZSTAIRS JUST DIE
+ * DUMBASSES
+ */
 /obj/structure/stairs
 	name = "Stairs"
 	icon = 'icons/obj/structures/stairs.dmi'
 	desc = "Stairs.  You walk up and down them."
 	icon_state = "rampbottom"
-	layer = TURF_LAYER
+	plane = FLOOR_PLANE // we want this to render below walls if we place them on top
+	layer = LOWER_RUNE_LAYER
 	density = FALSE
 	opacity = FALSE
 
@@ -238,7 +253,7 @@
 	AddElement(/datum/element/connect_loc, connections)
 
 /obj/structure/stairs/footstep_override(atom/movable/source, list/footstep_overrides)
-	footstep_overrides[FOOTSTEP_CATWALK] = layer
+	footstep_overrides[FOOTSTEP_CATWALK] = get_footstep_layer(layer, plane)
 
 //stand alone stairs
 /obj/structure/stairs/edge

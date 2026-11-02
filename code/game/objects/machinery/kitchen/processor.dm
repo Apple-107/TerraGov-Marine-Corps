@@ -2,7 +2,7 @@
 	name = "Food Processor"
 	icon = 'icons/obj/kitchen.dmi'
 	icon_state = "processor"
-	layer = ABOVE_TABLE_LAYER
+	layer = GIB_LAYER
 	density = TRUE
 	anchored = TRUE
 	coverage = 20
@@ -82,8 +82,8 @@
 
 	user.visible_message(span_danger("[user] processes [grabbed_mob]!"), span_notice("You process [grabbed_mob]!"), "You hear churning.")
 	log_combat(user, grabbed_mob, "food processed")
-	playsound(loc, 'sound/machines/blender.ogg', 25, 1)
-	grabbed_mob.apply_damage(80, BRUTE, "head", MELEE, TRUE, updating_health = TRUE)
+	playsound(loc, 'sound/machines/blender.ogg', 25, 1, MEDIUM_SOUND_RANGE)
+	grabbed_mob.apply_damage(80, BRUTE, "head", MELEE, TRUE, updating_health = TRUE, attacker = user)
 	return TRUE
 
 /obj/machinery/processor/attack_hand(mob/living/user)
@@ -104,13 +104,13 @@
 			stack_trace("[O] in processor doesn't have a suitable recipe.") //-rastaf0
 			continue
 		src.processing = 1
-		user.visible_message(span_notice(" [user] turns on [src]."), \
+		user.visible_message(span_notice("[user] turns on [src]."), \
 			"You turn on [src].", \
 			"You hear a food processor.")
-		playsound(src.loc, 'sound/machines/blender.ogg', 25, 1)
+		playsound(src.loc, 'sound/machines/blender.ogg', 25, 1, MEDIUM_SOUND_RANGE)
 		use_power(active_power_usage)
 		sleep(P.time)
 		P.process(src.loc, O)
 		src.processing = 0
-	src.visible_message(span_notice(" \the [src] finished processing."), \
+	src.visible_message(span_notice("\the [src] finished processing."), \
 		"You hear the food processor stopping/")

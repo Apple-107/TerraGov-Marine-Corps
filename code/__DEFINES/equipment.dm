@@ -26,7 +26,8 @@
 #define PASS_TANK (1<<11)
 
 #define PASSABLE (PASS_THROW|PASS_PROJECTILE|PASS_AIR)
-#define HOVERING (PASS_LOW_STRUCTURE|PASS_MOB|PASS_DEFENSIVE_STRUCTURE|PASS_FIRE)
+#define Z_FLYING (PASS_LOW_STRUCTURE|PASS_FIRE)
+#define HOVERING (PASS_LOW_STRUCTURE|PASS_MOB|PASS_DEFENSIVE_STRUCTURE|PASS_FIRE|PASS_TANK)
 
 //==========================================================================================
 
@@ -75,7 +76,7 @@
 //bitflags that were previously under atom_flags, these only apply to items.
 //clothing specific stuff uses inventory_flags.
 //item_flags
-/// when an item has this it produces no "X has been hit by Y with Z" message with the default handler
+/// when an item has this it produces no "X [Z.attack_verb] Y with their Z!" message with the default handler
 #define NOBLUDGEON (1<<0)
 /// Deletes on drop instead of falling on the floor.
 #define DELONDROP (1<<1)
@@ -93,34 +94,38 @@
 #define IMPEDE_JETPACK (1<<7)
 ///Item triggers bump attack
 #define CAN_BUMP_ATTACK (1<<8)
-///Item can be deployed into a machine
-#define IS_DEPLOYABLE (1<<9)
-///Item deploys on initialize
-#define DEPLOY_ON_INITIALIZE (1<<10)
-///If this is on an item, said item is currently deployed
-#define IS_DEPLOYED (1<<11)
-///Disables deployed item pickup
-#define DEPLOYED_NO_PICKUP  (1<<12)
-///Disables deployed item rotation abilities to rotate.
-#define DEPLOYED_NO_ROTATE  (1<<13)
-///Disables deployed item rotation if anchored.
-#define DEPLOYED_NO_ROTATE_ANCHORED (1<<14)
-///If this is on an item, the item can only be disassembled using a wrench once deployed.
-#define DEPLOYED_WRENCH_DISASSEMBLE (1<<15)
-///Disables firing deployable if it is not anchored.
-#define DEPLOYED_ANCHORED_FIRING_ONLY (1<<16)
 ///If the item is properly wielded. Used for guns
-#define FULLY_WIELDED (1<<17)
+#define FULLY_WIELDED (1<<9)
 ///If a holster has underlay sprites
-#define HAS_UNDERLAY (1<<18)
+#define HAS_UNDERLAY (1<<10)
 ///is this item equipped into an inventory slot or hand of a mob?
-#define IN_INVENTORY (1<<19)
+#define IN_INVENTORY (1<<11)
 ///This item is used for autobalance calculations or excluded, such as valhalla items
-#define AUTOBALANCE_CHECK (1<<20)
+#define AUTOBALANCE_CHECK (1<<12)
 ///This item is in any storage
-#define IN_STORAGE (1<<21)
+#define IN_STORAGE (1<<13)
 ///If an item can be restocked/refilled in a vendor, despite not being infinite supply
-#define CAN_REFILL (1<<22)
+#define CAN_REFILL (1<<14)
+///Can be toggled on and off
+#define ITEM_ACTIVATABLE (1<<15)
+
+//deployment_flags
+///Item can be deployed into a machine
+#define IS_DEPLOYABLE (1<<0)
+///Item deploys on initialize
+#define DEPLOY_ON_INITIALIZE (1<<1)
+///If this is on an item, said item is currently deployed
+#define IS_DEPLOYED (1<<2)
+///Disables deployed item pickup
+#define DEPLOYED_NO_PICKUP  (1<<3)
+///Disables deployed item rotation abilities to rotate.
+#define DEPLOYED_NO_ROTATE  (1<<4)
+///Disables deployed item rotation if anchored.
+#define DEPLOYED_NO_ROTATE_ANCHORED (1<<5)
+///If this is on an item, the item can only be disassembled using a wrench once deployed.
+#define DEPLOYED_WRENCH_DISASSEMBLE (1<<6)
+///Disables firing deployable if it is not anchored.
+#define DEPLOYED_ANCHORED_FIRING_ONLY (1<<7)
 
 //storage_flags
 ///If a storage container can be restocked into a vendor
@@ -681,3 +686,27 @@ GLOBAL_LIST_INIT(slot_str_to_slot, list(
 		if(SLOT_IN_STORAGE)
 			return "Active Storage"
 
+
+///Get appropriate SLOT_IN_X for given slot
+/obj/item/proc/slot_to_in_storage_slot(slot)
+	switch(slot)
+		if(SLOT_SHOES)
+			return SLOT_IN_BOOT
+		if(SLOT_BACK)
+			return SLOT_IN_BACKPACK
+		if(SLOT_WEAR_SUIT)
+			return SLOT_IN_SUIT
+		if(SLOT_W_UNIFORM)
+			return SLOT_IN_ACCESSORY
+		if(SLOT_BELT)
+			return SLOT_IN_BELT
+		if(SLOT_S_STORE)
+			return SLOT_IN_S_HOLSTER
+		if(SLOT_L_STORE)
+			return SLOT_IN_L_POUCH
+		if(SLOT_R_STORE)
+			return SLOT_IN_R_POUCH
+		if(SLOT_HEAD)
+			return SLOT_IN_HEAD
+		else
+			return 0

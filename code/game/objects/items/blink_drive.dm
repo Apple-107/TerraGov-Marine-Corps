@@ -66,7 +66,7 @@
 
 /obj/item/blink_drive/apply_custom(mutable_appearance/standing, inhands, icon_used, state_used)
 	. = ..()
-	var/mutable_appearance/emissive_overlay = emissive_appearance(icon_used, "[state_used]_emissive")
+	var/mutable_appearance/emissive_overlay = emissive_appearance(icon_used, "[state_used]_emissive", src)
 	standing.overlays.Add(emissive_overlay)
 
 /obj/item/blink_drive/ui_action_click(mob/user, datum/action/item_action/action, target)
@@ -83,8 +83,8 @@
 ///Handles the actual teleportation
 /obj/item/blink_drive/proc/teleport(atom/A, mob/user)
 	if(charges <= 0)
-		user.balloon_alert(user, "no charge")
-		playsound(src, 'sound/items/blink_empty.ogg', 25, 1)
+		user.balloon_alert(user, "no charge!")
+		playsound(src, 'sound/items/blink_empty.ogg', 25, 1, MEDIUM_SOUND_RANGE)
 		return
 	var/turf/target_turf = get_turf(A)
 
@@ -94,7 +94,7 @@
 	var/target_distance = get_dist(user, target_turf)
 
 	if(target_distance > BLINK_DRIVE_RANGE)
-		user.balloon_alert(user, "too far")
+		user.balloon_alert(user, "too far!")
 		return
 
 	user.face_atom(target_turf)
@@ -102,7 +102,7 @@
 	var/instability = 0 //certain factors can make the teleport unreliable
 	if(target_distance > BLINK_DRIVE_RANGE - 2)
 		instability ++
-	if(!COOLDOWN_CHECK(src, blink_stability_cooldown))
+	if(!COOLDOWN_FINISHED(src, blink_stability_cooldown))
 		instability ++
 	if(!line_of_sight(user, target_turf, 9))
 		instability ++
@@ -142,7 +142,7 @@
 ///Recharges the drive, and sets another timer if not maxed out
 /obj/item/blink_drive/proc/recharge()
 	charges ++
-	playsound(src, 'sound/items/blink_recharge.ogg', 25, 1)
+	playsound(src, 'sound/items/blink_recharge.ogg', 25, 1, MEDIUM_SOUND_RANGE)
 	if(charges < BLINK_DRIVE_MAX_CHARGES)
 		charge_timer = addtimer(CALLBACK(src, PROC_REF(recharge)), BLINK_DRIVE_CHARGE_TIME, TIMER_STOPPABLE)
 	else
@@ -151,13 +151,13 @@
 
 ///The effects applied on teleporting from or to a location
 /obj/item/blink_drive/proc/teleport_debuff_aoe(atom/movable/teleporter)
-	playsound(teleporter, 'sound/effects/EMPulse.ogg', 25, 1)
+	playsound(teleporter, 'sound/effects/EMPulse.ogg', 25, 1, MEDIUM_SOUND_RANGE)
 
 	new /obj/effect/temp_visual/blink_drive(get_turf(teleporter))
 
 	for(var/mob/living/living_target in range(1, teleporter))
 		living_target.adjust_stagger(1 SECONDS)
-		living_target.add_slowdown(1)
+		living_target.slowdown(1)
 		to_chat(living_target, span_warning("You feel nauseous as reality warps around you!"))
 
 //codex stuff
@@ -200,11 +200,38 @@
 	use_state_flags = ABILITY_USE_STAGGERED|ABILITY_USE_BUSY
 	keybinding_signals = list(KEYBINDING_NORMAL = COMSIG_ITEM_TOGGLE_BLINKDRIVE)
 
-/datum/action/ability/activable/item_toggle/blink_drive/can_use_ability(silent, override_flags, selecting)
+/datum/action/ability/activable/item_toggle/blink_drive/can_use_ability(atom/A, silent = FALSE, override_flags)
 	var/mob/living/carbon/carbon_owner = owner
 	if(carbon_owner.incapacitated() || carbon_owner.lying_angle)
 		return FALSE
 	if(is_mainship_level(carbon_owner.z))
-		carbon_owner.balloon_alert(carbon_owner, "can't use here")
+		carbon_owner.balloon_alert(carbon_owner, "can't use that here!")
 		return FALSE
 	return ..()
+
+/datum/action/ability/activable/item_toggle/blink_drive/ai_should_start_consider()
+	return TRUE
+
+/datum/action/ability/activable/item_toggle/blink_drive/ai_should_use(atom/target)
+	var/obj/item/blink_drive/blink_parent = src.target
+	if(isainode(target))
+		if(blink_parent.charges < 2) //keep one for combat
+			return FALSE
+		if(get_dist(owner, target) > 5)
+			return FALSE
+		if(!can_use_ability(target, override_flags = ABILITY_IGNORE_SELECTED_ABILITY))
+			return FALSE
+		return TRUE
+
+	if(!(isliving(target) || ismecha(target) || isarmoredvehicle(target)))
+		return FALSE
+	var/atom/movable/movable_target = target
+	if(movable_target.faction == owner.faction)
+		return FALSE
+	if(!can_use_ability(movable_target, override_flags = ABILITY_IGNORE_SELECTED_ABILITY))
+		return FALSE
+	if(!blink_parent.charges)
+		return FALSE
+	if(get_dist(owner, movable_target) > 7)
+		return FALSE
+	return TRUE
